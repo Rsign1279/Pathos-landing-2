@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10100e">
+<meta name="description" content="Explore the PATHOS hardware concept, from sensors to the dashboard. An interactive engineering study; body sensors are in development.">
+<title>Inside the build — PATHOS</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="stylesheet" href="prototype.css">
+<link rel="preload" href="assets/fonts/eb-garamond-latin-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/figtree-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"EB Garamond";font-weight:400;font-style:normal;font-display:swap;src:url("assets/fonts/eb-garamond-latin-400.woff2") format("woff2")}
+@font-face{font-family:"Figtree";font-weight:300 900;font-style:normal;font-display:swap;src:url("assets/fonts/figtree-latin-variable.woff2") format("woff2")}
+:root{--bg:#10100e;--ink:#f3eadf;--text:#c9c0b6;--gold:#96753e;--gold-light:#d2af70;--font-body:'Figtree',system-ui,sans-serif;--font-mono:ui-monospace,Consolas,monospace;--ease:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:88px}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 var(--font-body)}a{color:inherit;text-underline-offset:5px}button{font:inherit}:focus-visible{outline:2px solid #f0d7ff;outline-offset:4px}h1,h2,h3,p{margin:0}.wrap{width:min(100% - 48px,1200px);margin:auto}.study-nav{position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:24px;gap:24px;max-width:1320px;margin:auto}.study-nav a{min-height:44px;display:inline-flex;align-items:center;gap:12px;text-decoration:none}.study-brand{letter-spacing:.2em;font-weight:600;color:var(--ink)}.study-back{font-size:14px}.prototype{padding-top:40px}.prototype-head{max-width:900px}.eyebrow{font-size:12px;line-height:16px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-light);margin-bottom:16px}.heading-2{font-family:'EB Garamond',Georgia,serif;font-size:60px;line-height:1;font-weight:400;color:var(--ink);text-wrap:balance}.sec-tag{margin-top:24px;max-width:640px;font-size:16px}.study-status{margin:24px auto 32px;max-width:1200px;padding:0 24px;color:#b8ada2;font-size:14px}.study-status strong{font-weight:500;color:var(--gold-light)}.study-foot{max-width:1200px;margin:auto;padding:48px 24px 80px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:14px}.study-foot a{min-height:44px;display:inline-flex;align-items:center}.hw-stage{border-width:1px;border-color:#4b4339;border-radius:16px;box-shadow:none}.hw-bar{background:#171510;color:#b8ada2}.hw-rail-btn{min-height:44px;color:#b8ada2;font-family:var(--font-body);font-size:12px}.hw-rail-btn.is-past{color:#b8ada2}.hw-rail-btn.is-on{color:#e7c78b}.hw-skip,.hw-360,.hw-orbit-btn,.hw-orbit-exit,.hw-label-x{min-height:44px}.hw-orbit-btn,.hw-label-x{min-width:44px}.hw-label-card{padding-right:52px}.hw-clock{color:#b8ada2}.hw-scrub span{background:var(--gold-light)}.hw-hud{--serif:'EB Garamond',Georgia,serif;--sans:var(--font-body)}.study-fallback{padding:24px;max-width:680px;margin:auto}.study-fallback p+p{margin-top:16px}
+html.hw-reduced{scroll-behavior:auto}html.hw-reduced .hw-track{height:auto}html.hw-reduced .hw-stage{position:relative;top:0}html.hw-reduced .hw-view{bottom:96px}html.hw-reduced .hw-rail{left:12px;right:12px;top:auto;bottom:8px;transform:none;display:grid;grid-template-columns:repeat(5,1fr);gap:0}html.hw-reduced .hw-rail-btn{display:flex;justify-content:center;padding:0 4px}html.hw-reduced .hw-rail-btn .l{display:none}html.hw-reduced .hw-rail-btn .n{padding:0}html.hw-reduced .hw-rail-btn .n::after{display:none}html.hw-reduced .hw-stage *,html.hw-reduced .hw-stage *::before{animation:none!important;transition:none!important}.hw-reduced .sec-tag::after{content:' Motion is paused. Select a numbered chapter to inspect it.'}
+@media(max-width:800px){.heading-2{font-size:48px}.study-nav{padding:16px 24px;gap:16px}.study-back{font-size:12px}.prototype{padding-top:24px}.hw-stage{min-height:0;height:calc(100svh - 96px);width:calc(100% - 32px)}.hw-bar{height:56px}.hw-view{inset:56px 0 0}.hw-orbit-ui{max-width:calc(100% - 16px)}.hw-orbit-exit{font-size:12px}.hw-skip{display:flex;align-items:center}.hw-clock{display:none}.hw-360 span{display:inline}.hw-360{font-size:12px}.hw-rail{display:flex;left:8px;right:8px;top:auto;bottom:8px;transform:none;justify-content:flex-start;overflow-x:auto;scrollbar-width:thin}.hw-rail-btn{flex:0 0 44px;min-width:44px;min-height:44px;padding:0 2px}.hw-rail-btn .l{display:none}.hw-rail-btn .n{padding:0}.hw-rail-btn .n::after{display:none}.hw-view{bottom:56px}}
+@media(max-width:380px){.heading-2{font-size:36px}.study-nav{align-items:flex-start}.study-back{max-width:130px;text-align:right}.hw-360 span{display:none}}
+.study-skip{position:fixed;top:12px;left:12px;z-index:100;transform:translateY(-160%);background:#e6d4ec;color:#10100e;padding:12px 24px;text-decoration:none}.study-skip:focus{transform:none}
+</style>
+<script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js","three/addons/":"./assets/vendor/three/addons/"}}</script>
+</head>
+<body>
+<a class="study-skip" href="#main">Skip to content</a>
+<nav class="study-nav" aria-label="Hardware study"><a class="study-brand" href="./" aria-label="PATHOS home">PATHOS</a><a class="study-back" href="./#product">← Back to the real build</a></nav>
+<main id="main">
+    <section id="prototype" class="prototype" aria-label="PATHOS hardware, in 3D">
+        <div class="wrap">
+            <header class="sec-head sys-head prototype-head" data-reveal>
+                <p class="eyebrow">04 &middot; Hardware in 3D</p>
+                <h1 class="heading-2">Follow one signal through the&nbsp;rig</h1>
+                <p class="body-3 sec-tag">Scroll to take it apart. Select a chapter to jump directly to a component.</p>
+            </header>
+        </div>
+        <div class="hw-track" id="hwTrack">
+            <div class="hw-stage" id="hwStage">
+                <div class="hw-bar">
+                    <span class="hw-file"><i class="dot" aria-hidden="true"></i>pathos-hardware.glb</span>
+                    <span class="hw-clock" aria-hidden="true"><span id="hwFrame">0001</span> / 2880</span>
+                    <button type="button" class="hw-360" id="hw360" aria-pressed="false" hidden><svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><ellipse cx="10" cy="10" rx="8" ry="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M14.6 5.6l2.2.9-.9 2.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>360&deg; view</span></button>
+                    <a class="hw-skip" href="./#product">Back to the build &darr;</a>
+                </div>
+                <div class="hw-view" id="hwView">
+                    <img class="hw-poster" id="hwPoster" src="assets/pathos-hardware-poster.webp" alt="The PATHOS prototype on a matte black table: the breadboard rig with its power bank and finger electrodes beside a midnight MacBook showing the PATHOS Stress-Lysis Monitor." width="1600" height="900" decoding="async">
+                    <p class="hw-status" id="hwStatus" role="status">Loading the 3D model…</p>
+                    <span class="hw-tip" id="hwTip" hidden></span>
+                    <div class="hw-label" id="hwLabel" role="status" hidden>
+                        <i class="hw-label-dot" aria-hidden="true"></i>
+                        <div class="hw-label-card"><strong></strong><span class="hw-label-d"></span><button type="button" class="hw-label-x" aria-label="Close label">&times;</button></div>
+                    </div>
+                    <div class="hw-orbit-ui" id="hwOrbitUi" hidden>
+                        <span class="hw-orbit-hint">Drag to look around &middot; tap a part to label it</span>
+                        <button type="button" class="hw-orbit-btn" id="hwZoomIn" aria-label="Zoom in">+</button>
+                        <button type="button" class="hw-orbit-btn" id="hwZoomOut" aria-label="Zoom out">&minus;</button>
+                        <button type="button" class="hw-orbit-exit" id="hwExit360">Back to the film</button>
+                    </div>
+                    <div class="hw-hud" id="hwHud" aria-live="off">
+                        <article class="hw-chapter" data-shot-start="1" data-shot-end="298" data-start="1" data-end="286" data-rail="Overview">
+                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;01</p>
+                            <h3 class="hw-title hw-title--intro">PATHOS</h3>
+                            <div class="hw-plate hw-plate--short"><p class="hw-caption">PHYSIOLOGICAL AWARENESS, ENGINEERED.</p></div>
+                        </article>
+                        <article class="hw-chapter" data-shot-start="298" data-shot-end="688" data-start="298" data-end="676" data-rail="Exploded view">
+                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;02</p>
+                            <div class="hw-plate"><p class="hw-caption">ONE BREADBOARD. EIGHT CONNECTED MODULES.</p></div>
+                        </article>
+                        <article class="hw-chapter" data-shot-start="688" data-shot-end="898" data-start="688" data-end="886" data-rail="The brain">
+                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;03</p>
+                            <h3 class="hw-title">The brain</h3>
+                            <div class="hw-plate"><p class="hw-caption">ESP32-S3 / ACQUISITION, CONTROL AND WI-FI</p></div>
+                        </article>
+                        <article class="hw-chapter" data-shot-start="898" data-shot-end="1198" data-start="898" data-end="1194" data-rail="Sensor highway">
+                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;04</p>
+                            <div class="hw-plate"><p class="hw-caption">TMP117 / ADS1115 / MPU6050 / MAX30102 / BME280</p></div>
+                        </article>
+                        <article class="hw-chapter" data-shot-start="1198" data-shot-end="1498" data-start="1198" data-end="1486" data-rail="GSR data path">
+                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;05</p>
+                            <div class="hw-plate"><p class="hw-caption">ELECTRODES&nbsp;&nbsp;&gt;&nbsp;&nbsp;GSR&nbsp;&nbsp;&gt;&nbsp;&nbsp;ADS1115 A0&nbsp;&nbsp;&gt;&nbsp;&nbsp;I2C&nbsp;&nbsp;&gt;&nbsp;&nbsp;ESP32-S3</p></div>
+                        </article>
+                        <article class="hw-chapter" data-shot-start="1498" data-shot-end="1678" data-start="1498" data-end="1666" data-rail="Storage">
+                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;06</p>
+                            <div class="hw-plate"><p class="hw-caption">ESP32-S3&nbsp;&nbsp;&gt;&nbsp;&nbsp;DEDICATED SPI&nbsp;&nbsp;&gt;&nbsp;&nbsp;microSD</p></div>
+                        </article>
+                        <article class="hw-chapter" data-shot-start="1678" data-shot-end="1948" data-start="1678" data-end="1936" data-rail="Wi-Fi">
+                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;07</p>
+                            <h3 class="hw-title">Connected, wirelessly</h3>
+                            <div class="hw-plate"><p class="hw-caption">ESP32-S3&nbsp;&nbsp;&gt;&nbsp;&nbsp;WI-FI&nbsp;&nbsp;&gt;&nbsp;&nbsp;LAPTOP</p></div>
+                        </article>
+                        <article class="hw-chapter" data-shot-start="1948" data-shot-end="2248" data-start="0" data-end="0" data-rail="Laptop">
+                            <p class="hw-sr">The laptop shows the PATHOS v1 software: Live Instrument, Model Study, Source Data and Diagnostics.</p>
+                        </article>
+                        <article class="hw-chapter" data-shot-start="2248" data-shot-end="2518" data-start="2248" data-end="2506" data-rail="Full pipeline">
+                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;09</p>
+                            <h3 class="hw-title">The complete pipeline</h3>
+                            <div class="hw-plate"><p class="hw-caption">SENSORS &gt; ESP32-S3 &gt; WI-FI &gt; PROCESSING &gt; V4 &gt; DASHBOARD</p></div>
+                        </article>
+                        <article class="hw-chapter hw-chapter--final" data-shot-start="2518" data-shot-end="2881" data-start="2598" data-end="2881" data-rail="Reassembly">
+                            <h3 class="hw-title hw-title--final">PATHOS</h3>
+                            <div class="hw-plate hw-plate--final"><p class="hw-line hw-line--ink">Stress You Can&rsquo;t See,</p><p class="hw-line hw-line--gold">Awareness You Can.</p></div>
+                            <a class="hw-cta" href="./#product">See the real build &darr;</a>
+                        </article>
+                    </div>
+                </div>
+                <nav class="hw-rail" id="hwRail" aria-label="Chapters"></nav>
+                <div class="hw-scrub" aria-hidden="true"><span id="hwScrub"></span></div>
+            </div>
+        </div>
+    </section>
+
+
+<p class="study-status"><strong>Engineering concept · body sensors in development.</strong> This study shows the intended system. The laptop displays the original v1 software, not live physiological readings.</p>
+<noscript><div class="study-fallback"><p>The still above shows the PATHOS concept. The working prototype uses an ESP32 and BME280 room sensor; physiological sensors are part of MVP 2.</p><p>Enable JavaScript for the interactive hardware study, or <a href="./#product">see the real prototype photographs</a>.</p></div></noscript>
+</main>
+<footer class="study-foot"><p>A wellness awareness research prototype. Not a medical device.</p><a href="./#product">Return to the build ↗</a></footer>
+<script type="module" src="hardware-launch.js"></script>
+</body>
+</html>

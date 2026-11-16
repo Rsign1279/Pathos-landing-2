@@ -1,74 +1,62 @@
-# PATHOS landing page
+# PATHOS — a world beneath the surface
 
-Static landing page for PATHOS, with a scroll-driven 3D hardware study built
-from the finished Blender film `PATHOS_Final_Complete.blend`.
+A static, locally served landing page. The opening uses one scroll-driven,
+stone-textured planet to tell the story behind PATHOS. Real prototype photos,
+software screens, the project film, and community evidence follow it.
 
-Run from this directory:
+## Run locally
+
+From this directory, run:
 
 ```sh
-python3 -m http.server 8000 --bind 127.0.0.1
+python -m http.server 3000 --bind 127.0.0.1
 ```
 
-Open http://localhost:8000/#prototype to review the ten-chapter 3D section.
-Scroll to scrub the film; the chapter rail on the right jumps between shots.
+Open http://localhost:3000/. No installation or build step is required.
 
-Three.js and the Draco decoder are bundled locally. The 3D model is
-`assets/pathos-hardware.glb` (exported from Blender, ~2.0 MB; phones load
-`assets/pathos-hardware-mobile.glb`, ~1.4 MB). The `.blend`
-source stays out of git; see [the 3D section notes](deliverables/pathos-hardware/README.md)
-for how the model is exported, how scroll maps to frames, and how to run the tests.
+## Implementation
 
-The MacBook in the model shows screenshots of the PATHOS v1 software, not live readings or V4 inference.
+- `index.html`, `experience.css`, and `experience.js`: the responsive page,
+  native chapter navigation, signal explorer, software tabs, native dialogs,
+  FAQ, and progressive enhancement.
+- `planet.js`: one analytic WebGL sphere, using the existing 114 KB marble
+  texture. No 3D model, framework, or postprocessing is needed for the planet.
+- `contact.js`: accessible validation and FormSubmit delivery. Delivery is
+  confirmed by the service; failures retain the visitor's text.
+- `hardware.html`, `hardware-launch.js`, and `prototype.js`: the original
+  engineering study, loaded only when a visitor opens it. Its image sequence
+  keeps at most 16 decoded frames and three concurrent requests.
+- `assets/fonts/`: locally served Figtree and EB Garamond, with OFL licenses.
 
-## The build: photo deck (`#product`)
+The planet renders at a capped pixel ratio and approximately 30 visual updates
+per second. Rendering stops outside its section and while the page is hidden.
+The motion control and system motion preference provide a still alternative.
+Videos do not autoplay or preload. The hardware viewer does not load on the
+main page. All essential narrative text remains ordinary HTML.
 
-`field.js` + `field.css` turn the MVP 1 and field photos (`assets/field-*.webp`,
-with `-sm` variants for phones) into a scroll-driven deck under the "The build"
-heading. Scrolling moves the cards along a U-shaped path; the centred card faces
-you, neighbours bank with the curve and turn, and outer cards flip to a marble
-back with their caption. Sideways drag swipes, the arrows step, tapping a side
-card centres it and tapping the centre card opens it in the lightbox. With
-reduced motion or no JavaScript the photos show as a plain grid. The track
-length scales with the number of cards (`--n` on `#flTrack`).
+## Verify
 
-## Page structure
+```sh
+node deliverables/verify-experience.cjs
+```
 
-The page tells one story, in this order:
+This zero-dependency audit checks source syntax, internal links and assets,
+landmarks, fallback behavior, loading boundaries, truthful project status,
+and the bounded hardware frame cache. It reports a source asset budget;
+it does not claim a Lighthouse score or measured network performance.
 
-1. **Hero** (`#hero`): the result people want ("See stress building before it
-   spills over") without the thing they fear (a $200 wearable, the cloud).
-2. **Proof**: partner logos, a results band (`#proof`), the v1 software tour
-   (`#device-tour`), partners (`#impact`) and the project log (`#journey`).
-3. **Problem** (`#problem`): a live chart of the gap between what the body
-   shows and what people see, plus the real cost of missing it.
-4. **Solution** (`#solution`): eight feature cards, each with a benefit and a
-   live mini visual, linking to the deep dives that follow (`#philosophy`,
-   `#sensors`, `#ai`, `#hardware`, `#prototype`, `#product`, `#pathos-iot`,
-   `#roadmap`, `#workshops`).
-5. **How it works** (`#how`): the three-step demo flow (place, verify,
-   observe) with a live scene that plays each step.
-6. **Founder** (`#team`) and **FAQ** (`#faq`).
-7. **Final call to action** (`#contact`) and the illustrated footer.
+Browser QA covers phone, tablet, and desktop layouts; chapter navigation;
+signal buttons; keyboard software tabs; photo dialogs; FAQ; and form errors.
+No real contact messages are submitted during QA.
 
-`story.js` also makes in-page links land exactly: sections render lazily, so
-it renders them for a moment before aiming and corrects if needed.
+## Content boundaries
 
-Test: `node deliverables/test-story.cjs`
+MVP 1's ESP32 and BME280 environmental pipeline is working. Physiological
+sensors, the wearable format, and caregiver alerts are in development for
+MVP 2. The hardware render is an engineering concept. WESAD model research
+has not been validated on PATHOS hardware. PATHOS is a wellness research
+prototype, not a medical device, and this site measures no visitor signals.
 
-## Interactive explanations (`play.js`, `play.css`)
-
-- **One reading can mean anything:** each signal card shows a live trace in the
-  shape that signal really has (pulse, skin conductance, skin temperature,
-  motion). Tap the signals you'd see together and a meter reads the
-  combination: one signal could be anything, movement explains it away, and
-  heart rate + sweat + cold fingers while still is the strong sign.
-- **Sensor table:** a small live trace per sensor; hovering a row shows what
-  that signal looks like when it reacts.
-- **How PATHOS makes a call:** the four steps run in sequence while on screen;
-  hovering or focusing a step holds it.
-- **Project log:** a rail fills as you scroll and each milestone lights up.
-- Partner numbers count up when they come into view, and the contact email has
-  a copy button. Traces only draw while visible; reduced motion keeps
-  everything still.
-
-Test: `node deliverables/test-play.cjs`
+The original assets and rendering scripts remain in the repository. Older
+stylesheets and page scripts are retained for history but are not requested
+by the redesigned landing page.

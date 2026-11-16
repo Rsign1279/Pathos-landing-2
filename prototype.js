@@ -44,9 +44,16 @@ const orbitUi = document.getElementById('hwOrbitUi');
 const rail = document.getElementById('hwRail');
 const scrubEl = document.getElementById('hwScrub');
 const frameEl = document.getElementById('hwFrame');
-// Animations run on every device, including when the system asks for reduced
-// motion (school laptops often ship with animations off). Founder's decision.
-const reduced = false;
+// A reduced-motion study changes only when a chapter is explicitly selected.
+const motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+let reduced = motionQuery.matches;
+motionQuery.addEventListener('change', e => {
+  reduced = e.matches;
+  document.documentElement.classList.toggle('hw-reduced', reduced);
+  if (orbit) orbit.enableDamping = !reduced;
+  tween = null; dirty = true; wake();
+});
+document.documentElement.classList.toggle('hw-reduced', reduced);
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -122,7 +129,9 @@ const railButtons = chapters.map(c => {
   b.addEventListener('click', () => {
     // Land where the shot's titles are up (or a moment into a shot without titles).
     const f = c.start ? Math.min(c.start + 40, c.end - 12) : c.shotStart + 40;
-    scrollTo({ top: scrollYForFrame(f), behavior: reduced ? 'auto' : 'smooth' });
+    if (reduced) {
+      cur = tgt = f; dirty = true; wake();
+    } else scrollTo({ top: scrollYForFrame(f), behavior: 'smooth' });
   });
   rail.appendChild(b);
   return b;
@@ -162,6 +171,8 @@ function updateHud(f) {
     railButtons.forEach((b, i) => {
       b.classList.toggle('is-on', i === current);
       b.classList.toggle('is-past', i < current);
+      if (i === current) b.setAttribute('aria-current', 'step');
+      else b.removeAttribute('aria-current');
     });
   }
 }
@@ -432,7 +443,7 @@ function render(now) {
   const dt = Math.min(0.1, (now - (last || now)) / 1000);
   last = now;
 
-  tgt = frameAt(scrollProgress());
+  if (!reduced) tgt = frameAt(scrollProgress());
   const k = reduced ? 1 : 1 - Math.exp(-dt * 11);
   cur += (tgt - cur) * k;
   if (Math.abs(tgt - cur) < 0.08) cur = tgt;
@@ -482,13 +493,81 @@ function render(now) {
   if (moving) raf = requestAnimationFrame(render);
   else last = 0;
 }
-function wake() { if (!raf && visible) raf = requestAnimationFrame(render); }
+function wake() { if (!raf && visible && !document.hidden) raf = requestAnimationFrame(render); }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0; last = 0;
+  } else { dirty = true; wake(); seqPump(); }
+});
 
 /* ---------- Pre-rendered film ---------- */
 
 let seqCanvas = null, seqCtx = null, seqReady = false, seqDpr = 1, seqKey = '', liveShown = null;
-const seqImgs = new Array(SEQ.n).fill(null);
+// Keep the decoder's memory bounded. The original whole-film preload retained
+// 480 decoded frames (~2.4 GB). Here at most 16 bitmaps and 3 in-flight loads
+// exist, and obsolete ImageBitmaps are explicitly released.
+const SEQ_CACHE_LIMIT = 16, SEQ_CONCURRENCY = 3;
+const seqImgs = new Map(), seqPending = new Map(), seqErrors = new Map();
+let seqWanted = [], seqCenter = -1, seqLoaded = 0, seqFailures = 0;
 let glStarted = false, pendingOrbit = false, pendingClick = null, pickAt = null;
+
+function seqRemember(k, bitmap) {
+  seqImgs.set(k, bitmap);
+  while (seqImgs.size > SEQ_CACHE_LIMIT) {
+    let victim = -1, distance = -1;
+    for (const n of seqImgs.keys()) {
+      if (Math.abs(n - seqCenter) > distance) { victim = n; distance = Math.abs(n - seqCenter); }
+    }
+    seqImgs.get(victim)?.close?.();
+    seqImgs.delete(victim);
+  }
+  stats.seqCached = seqImgs.size;
+}
+function seqRequest(u) {
+  const center = clamp(Math.round(u), 0, SEQ.n - 1);
+  if (center === seqCenter && seqWanted.length) { seqPump(); return; }
+  seqCenter = center;
+  // Required blend pair first; a short, nearby window follows. No background
+  // sweep downloads the remainder of the film.
+  const wanted = [Math.floor(u), Math.ceil(u), center];
+  for (let d = 1; d <= 4; d++) wanted.push(center + d, center - d);
+  seqWanted = [...new Set(wanted)].filter(k => k >= 0 && k < SEQ.n);
+  for (const [k, controller] of seqPending) if (Math.abs(k - center) > 8) controller.abort();
+  seqPump();
+}
+function seqPump() {
+  if (!USE_SEQ || document.hidden || (!visible && seqReady)) return;
+  for (const k of seqWanted) {
+    if (seqPending.size >= SEQ_CONCURRENCY) break;
+    if (seqImgs.has(k) || seqPending.has(k) || (seqErrors.has(k) && seqErrors.get(k) > performance.now() - 10000)) continue;
+    const controller = new AbortController();
+    seqPending.set(k, controller);
+    stats.seqPending = seqPending.size;
+    fetch(SEQ.url(k), { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error(`Frame ${k}: ${response.status}`);
+        return response.blob();
+      })
+      .then(blob => createImageBitmap(blob))
+      .then(bitmap => {
+        if (controller.signal.aborted || Math.abs(k - seqCenter) > 8 || !USE_SEQ) { bitmap.close(); return; }
+        seqRemember(k, bitmap);
+        stats.seqLoaded = ++seqLoaded;
+        if (!seqReady) { seqReady = true; stats.ready = true; stage.classList.add('is-ready'); statusEl.hidden = true; }
+        seqKey = ''; dirty = true; wake();
+      })
+      .catch(error => {
+        if (error.name === 'AbortError' || controller.signal.aborted) return;
+        seqErrors.set(k, performance.now());
+        if (++seqFailures >= 3 && !seqReady) seqFail();
+      })
+      .finally(() => {
+        seqPending.delete(k); stats.seqPending = seqPending.size;
+        seqPump();
+      });
+  }
+}
 
 function seqResize(w, h) {
   if (!seqCanvas) return;
@@ -498,14 +577,19 @@ function seqResize(w, h) {
   seqKey = ''; dirty = true; wake();
 }
 function nearestLoaded(u, dir) {
-  for (let k = dir < 0 ? Math.floor(u) : Math.ceil(u); k >= 0 && k < SEQ.n; k += dir) if (seqImgs[k]) return k;
-  return -1;
+  let nearest = -1;
+  for (const k of seqImgs.keys()) {
+    if (dir < 0 && k <= u && k > nearest) nearest = k;
+    if (dir > 0 && k >= u && (nearest < 0 || k < nearest)) nearest = k;
+  }
+  return nearest;
 }
 // Draws the two samples either side of frame f, blended, with the image's
 // film frame on the view's film frame; edges feather into the backdrop.
 function drawSeq(f) {
   if (!seqCtx) return;
   const u = clamp((f - FIRST) / SEQ.step, 0, SEQ.n - 1);
+  seqRequest(u);
   let lo = nearestLoaded(u, -1), hi = nearestLoaded(u, 1);
   if (lo < 0 && hi < 0) return;
   if (lo < 0) lo = hi;
@@ -521,8 +605,8 @@ function drawSeq(f) {
   c.globalAlpha = 1;
   c.fillStyle = '#060607';
   c.fillRect(0, 0, W, H);
-  c.drawImage(seqImgs[lo], ix, iy, iw, ih);
-  if (a > 0.004) { c.globalAlpha = a; c.drawImage(seqImgs[hi], ix, iy, iw, ih); c.globalAlpha = 1; }
+  c.drawImage(seqImgs.get(lo), ix, iy, iw, ih);
+  if (a > 0.004) { c.globalAlpha = a; c.drawImage(seqImgs.get(hi), ix, iy, iw, ih); c.globalAlpha = 1; }
   const e = 40 * k;
   const edge = (x0, y0, x1, y1, rx, ry, rw, rh) => {
     const g = c.createLinearGradient(x0, y0, x1, y1);
@@ -569,30 +653,10 @@ function seqStart() {
   seqCtx = seqCanvas.getContext('2d', { alpha: false });
   resize();
   new ResizeObserver(resize).observe(view);
-  // Coarse to fine: the whole film can be scrubbed early, then sharpens.
-  const order = [], seen = new Uint8Array(SEQ.n);
-  for (const st of [64, 32, 16, 8, 4, 2, 1]) for (let k = 0; k < SEQ.n; k += st) if (!seen[k]) { seen[k] = 1; order.push(k); }
-  let next = 0, active = 0, failed = 0, loaded = 0;
-  const pump = () => {
-    while (active < 6 && next < order.length) {
-      const k = order[next++];
-      active++;
-      const img = new Image();
-      img.decoding = 'async';
-      img.src = SEQ.url(k);
-      img.decode().then(() => {
-        seqImgs[k] = img;
-        stats.seqLoaded = ++loaded;
-        if (!seqReady) { seqReady = true; stats.ready = true; stage.classList.add('is-ready'); statusEl.hidden = true; }
-        seqKey = ''; dirty = true; wake();
-      }).catch(() => { if (++failed >= 6 && !loaded) seqFail(); })
-        .finally(() => { active--; if (USE_SEQ) pump(); });
-    }
-  };
-  pump();
+  seqRequest(reduced ? 0 : clamp((frameAt(scrollProgress()) - FIRST) / SEQ.step, 0, SEQ.n - 1));
   new IntersectionObserver(entries => {
     visible = entries[entries.length - 1].isIntersecting;
-    if (visible) { dirty = true; wake(); }
+    if (visible) { dirty = true; wake(); seqPump(); }
     else if (mode === 'orbit') { exitOrbit(); tween = null; }
   }, { rootMargin: '120px 0px' }).observe(stage);
   addEventListener('scroll', () => {
@@ -870,7 +934,7 @@ async function init() {
   orbitCam = new THREE.PerspectiveCamera();
   orbit = new OrbitControls(orbitCam, canvas);
   orbit.enabled = false;
-  orbit.enableDamping = true;
+  orbit.enableDamping = !reduced;
   orbit.dampingFactor = 0.07;
   orbit.rotateSpeed = 0.35;
   orbit.zoomSpeed = 0.6;
@@ -968,9 +1032,8 @@ async function init() {
 
 updateHud(FIRST);
 addEventListener('resize', () => { if (!renderer) layoutFilm(view.clientWidth || 1, view.clientHeight || 1); });
-// Build the scene once the page has loaded and gone quiet, or as soon as the
-// section is about two screens away, whichever comes first, so the model
-// download and shader compile never slow the hero.
+// Start only near the study. There is no idle-triggered preload on the landing
+// page; the standalone study imports this module on explicit entry.
 let started = false;
 const start = () => {
   if (started) return;
@@ -978,10 +1041,8 @@ const start = () => {
   near.disconnect();
   if (USE_SEQ) seqStart(); else startGL();
 };
-const near = new IntersectionObserver(es => { if (es[es.length - 1].isIntersecting) start(); }, { rootMargin: '200% 0px' });
+const near = new IntersectionObserver(es => { if (es[es.length - 1].isIntersecting) start(); }, { rootMargin: '25% 0px' });
 near.observe(stage);
-const idle = window.requestIdleCallback || (cb => setTimeout(cb, 1));
-const afterLoad = () => setTimeout(() => idle(start, { timeout: 2000 }), 1200);
 if (BAKE) {
   // Offline rendering of the sequence (deliverables/hw-bake.cjs).
   started = true; near.disconnect();
@@ -990,7 +1051,7 @@ if (BAKE) {
     window.pathosBake = f => { resize(); shownPage = -1; apply(f); renderer.render(scene, camera); return renderer.domElement.toDataURL('image/png'); };
     window.pathosBakeReady = true;
   });
-} else if (document.readyState === 'complete') afterLoad(); else addEventListener('load', afterLoad, { once: true });
+}
 
 window.pathosPrototype = {
   stats, film,

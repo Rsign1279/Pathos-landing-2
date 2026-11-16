@@ -1,5 +1,34 @@
 # PATHOS design record
 
+## Planetary narrative · November 16, 2026
+
+The new landing page is authored in `experience.css` and `experience.js`,
+replacing the previous cascade for the main experience. The historical
+decisions below describe earlier versions and are retained for context.
+
+The user's new reference establishes a rotating planet as the narrative
+device. The existing marble becomes its tactile surface; ivory Garamond,
+Figtree, bronze orbit lines, and lavender actions preserve the brand.
+Four chapters connect hidden feelings, body signals, interpretation, and
+care. Text enters from the planet's edge, then stays still for reading.
+Real engineering and community evidence follow on open cream sections.
+
+One optional WebGL canvas serves the opening. A still material fallback,
+system motion preference, and explicit motion control provide alternatives.
+Phone layouts put the illustration above readable content. Scrolling stays
+native, and chapter links navigate directly. Videos and the standalone
+hardware study load only when requested. The hardware frame cache is bounded.
+
+Current and planned capabilities are visibly separate. The engineering
+render is labeled as a concept; actual MVP 1 photographs remain evidence.
+The WESAD caveat stays beside model claims and the film. Contact service
+success is never simulated. No testimonials or new product metrics were added.
+
+Sixteen specialist agents reviewed story, art direction, factual boundaries,
+performance, mobile, accessibility, media, forms, runtime, visual captures,
+cross-page consistency, and final integration. Parent browser QA supplements
+the repeatable source audit in `deliverables/verify-experience.cjs`.
+
 The working record of approved and rejected design choices. Source of rules:
 `landing-page-design` skill (github.com/elayadesign/ai-design-skills,
 `skills/landing-page-design/SKILL.md`). Read this before changing any section.
