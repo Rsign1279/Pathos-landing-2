@@ -80,9 +80,8 @@ const traces = [];
 function makeTrace(canvas, signal, getActive) {
   const tr = { canvas, ctx: canvas.getContext('2d'), signal, getActive, a: 0, visible: false, w: 0, h: 0, dpr: 1 };
   const size = () => {
-    const r = canvas.getBoundingClientRect();
     tr.dpr = Math.min(2, devicePixelRatio || 1);
-    tr.w = Math.max(1, Math.round(r.width)); tr.h = Math.max(1, Math.round(r.height));
+    tr.w = Math.max(1, canvas.clientWidth); tr.h = Math.max(1, canvas.clientHeight);
     canvas.width = tr.w * tr.dpr; canvas.height = tr.h * tr.dpr;
     draw(tr, performance.now() / 1000);
   };

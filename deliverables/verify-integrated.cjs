@@ -79,6 +79,8 @@ for(let index=0;index<groupSections.length;index++){
   check(JSON.stringify(sectionIds(members))===JSON.stringify(groupSections[index]),`Planet passage ${index+1} must contain only its six requested original sections`);
   check(members.every(section=>attr(section.open,'data-planet-chapter')!==undefined),`Planet passage ${index+1} has an unmarked chapter`);
   check(!/class=["'][^"']*\bedge-art\b/.test(group.inner),`Planet passage ${index+1} still includes redundant decorative edge canvases`);
+  check(/<svg\b[^>]*class=["']orbit-type["'][^>]*aria-hidden=["']true["']/.test(group.inner),`Planet passage ${index+1} must hide its decorative duplicate heading from assistive technology`);
+  check(/<textPath\b[^>]*class=["']orbit-type-words["']/.test(group.inner),`Planet passage ${index+1} needs a surface text path`);
 }
 const scoped=currentSections.filter(section=>attr(section.open,'data-planet-chapter')!==undefined);
 check(scoped.length===12,'Exactly 12 original sections must receive the planetary treatment');
@@ -91,7 +93,8 @@ check(JSON.stringify(moduleSources)===JSON.stringify(needed),'Original functiona
 check(!/\bexperience\.(?:js|css)\b/.test(current),'Replacement-page experience modules must not load');
 const css=read('integrated.css');
 check(!/fonts\.(?:googleapis|gstatic)\.com/.test(current+css),'Integrated page must serve fonts locally');
-const changedScripts=['main.js','story.js','integration.js','prototype-loader.js','planet.js','prototype.js','hero.js','film.js'];
+check(css.includes(read('integration.css')),'The served CSS bundle must include the current integration stylesheet');
+const changedScripts=['main.js','story.js','play.js','integration.js','orbit-motion.js','prototype-loader.js','planet.js','prototype.js','hero.js','film.js','deliverables/build-integrated.cjs'];
 for(const script of changedScripts){const result=spawnSync(process.execPath,['--check',path.join(root,script)],{encoding:'utf8'});check(result.status===0,`${script}: JavaScript syntax error ${result.stderr}`);}
 
 const pages=['index.html','hardware.html','privacy.html','404.html'];
@@ -111,10 +114,11 @@ function verifyReference(source,raw){
 }
 for(const [file,html] of Object.entries(documents)){
   check(new Set(ids[file]).size===ids[file].length,`${file}: duplicate DOM IDs`);
-  for(const match of html.matchAll(/<(?:a|link|script|img|video|source)\b[^>]*>/g)){
+  for(const match of html.matchAll(/<(?:a|link|script|img|video|source|textPath|use)\b[^>]*>/gi)){
     for(const name of ['href','src','poster','data-src','data-photo'])verifyReference(file,attr(match[0],name));
     const srcset=attr(match[0],'srcset');if(srcset)for(const candidate of srcset.split(','))verifyReference(file,candidate.trim().split(/\s+/)[0]);
   }
+  for(const match of html.matchAll(/clip-path=["']url\(#([^)'"\s]+)\)["']/g))check(ids[file].includes(match[1]),`${file}: missing SVG clipping path #${match[1]}`);
 }
 for(const match of css.matchAll(/url\(["']?([^\s)'";]+)["']?\)/g))if(!match[1].startsWith('#'))verifyReference('integrated.css',match[1]);
 check(/preload="none"/.test(after.hero.inner)&&!/\bautoplay\b/.test(after.hero.inner),'Hero video loading must remain deferred');
@@ -123,7 +127,10 @@ const loader=read('prototype-loader.js');
 check(/IntersectionObserver/.test(loader)&&!/requestIdleCallback|setTimeout\s*\(/.test(loader),'Hardware loader must be visibility-gated without an unconditional idle import');
 const integration=read('integration.js');
 check(count(integration,/document\.createElement\('canvas'\)/g)===1,'Planet passages must share one canvas');
-check(/document\.hidden/.test(integration)&&/if\(renderer&&!paused\)wake\(\)/.test(integration),'Planet scheduling must stop when unavailable, paused, or hidden');
+check(/if\(document\.hidden\)return/.test(integration)&&/if\(!settled\|\|needsMeasure\)\{dirty=true;wake\(\);\}/.test(integration)&&/if\(needsMeasure&&time-lastMeasure>=\d+\)measure\(\)/.test(integration)&&!/ambient\s*\+=|setInterval\s*\(/.test(integration),'Planet scheduling must settle after scroll or a bounded pending geometry update and stop while hidden, without an ambient idle loop');
+const integrationImports=[...integration.matchAll(/^import\s+[^;]*?from\s+["']([^"']+)["'];?/gm)].map(match=>match[1]);
+check(integrationImports.includes('./orbit-motion.js'),'The scroll story must load its production angular motion module');
+for(const dependency of integrationImports)verifyReference('integration.js',dependency);
 console.log(`${checks-failures.length}/${checks} integrated content/source checks passed.`);
 console.log('Preserved collections: 19 sections; 6 partners; 6 sensor/controller rows; bus details; 7 milestones; 5 workshops; 5 founder facts; 4 FAQs; 4 software screens; 6 field cards; 10 hardware chapters.');
 console.log(`CSS bundle: ${(Buffer.byteLength(css)/1024).toFixed(1)} KiB raw, ${(gzipSync(css).length/1024).toFixed(1)} KiB gzip. Source size only; browser behavior is verified separately.`);

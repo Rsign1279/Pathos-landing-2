@@ -30,8 +30,11 @@ const stage = group => `<aside class="planet-stage" aria-label="${group.label}">
   <div class="orbit-object" aria-hidden="true">
     <svg class="orbit-lines" viewBox="0 0 1000 1000"><g fill="none" stroke="currentColor"><ellipse cx="500" cy="500" rx="477" ry="212" transform="rotate(-28 500 500)"/><ellipse cx="500" cy="500" rx="435" ry="322" transform="rotate(35 500 500)" stroke-dasharray="1 9"/><circle cx="500" cy="500" r="360" opacity=".25"/></g><g fill="currentColor"><circle cx="850" cy="285" r="4"/><circle cx="150" cy="712" r="3"/></g></svg>
     <div class="planet-surface"><div class="orbit-still"></div></div>
+    <svg class="orbit-type" viewBox="0 0 1000 1000" aria-hidden="true"><defs><clipPath id="${group.id}-type-clip"><circle cx="500" cy="500" r="496"/></clipPath><path id="${group.id}-type-path" d="M-60 530 Q500 420 1060 530"/></defs><g clip-path="url(#${group.id}-type-clip)"><text><textPath class="orbit-type-words" href="#${group.id}-type-path" startOffset="-1000"></textPath></text></g></svg>
   </div>
+  <svg class="orbit-thread" aria-hidden="true"><path class="orbit-surface-trace"/><path class="orbit-thread-path"/></svg><span class="orbit-source" aria-hidden="true"></span>
   <div class="planet-stage-caption"><span class="planet-chapter-count">01 / 06</span><h2 class="planet-chapter-title">${group.chapters[0][1]}</h2><p class="planet-chapter-note">${group.chapters[0][2]}</p></div>
+  <span class="planet-scroll-cue" aria-hidden="true">Scroll to unfold <span>↓</span></span>
   <nav class="planet-chapter-links" aria-label="${group.label}: chapters">${group.chapters.map(([id,label],i)=>`<a href="#${id}" aria-label="Chapter ${i+1}: ${label}"${i===0?' aria-current="step"':''}><span>0${i+1}</span><span>${label}</span></a>`).join('')}</nav>
   <div class="orbit-progress" aria-hidden="true"><span></span></div>
 </aside>`;

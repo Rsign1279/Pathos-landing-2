@@ -48,22 +48,33 @@ commit `6cfb566` so content preservation is directly auditable.
 - `integrated.css`: the existing styles plus the integration layer in one
   request. Regenerate it after changing a source stylesheet.
 - `integration.js`: one shared optional WebGL planet across two passages.
-  Text remains normal HTML; the original UI modules keep their behavior.
+  One scroll-derived angle drives both its rotation and each original content
+  row's emergence. Text remains normal HTML with its original UI behavior.
+- `orbit-motion.js`: reversible angular phases, surface origins and curved
+  poses shared by the renderer, typography and repeatable motion checks.
 - `planet.js`: the lightweight analytic sphere and existing marble texture.
 - `prototype-loader.js`: loads the original in-page hardware study only near
   its section. The study retains its bounded 16-frame cache.
 - `hero.js` and `film.js`: preserve the real films, with deferred loading,
   visibility pauses, controls, and reduced-motion alternatives.
 
-On phones the planet becomes a compact chapter companion, leaving the full
-screen width available for the original content. No nested scroll container
-or forced snapping is used. Fonts are served locally.
+Original headings travel across the marble surface, then unroll into their
+reserved reading positions. Paired entries share a row trajectory; later
+rows clear previously delivered copy. The sphere and text stop together
+when scrolling stops, and rewind together when scrolling reverses. Rendering
+stops at rest and outside the passages. No animation framework was added.
+
+On phones a larger, compact planet emits down from its lower edge into the
+full-width page. Pause and reduced-motion preference expose every word
+immediately. Keyboard focus settles interactive content. No nested scroll
+container or forced snapping is used. Fonts are served locally.
 
 ## Rebuild and verify
 
 ```sh
 node deliverables/build-integrated.cjs
 node deliverables/verify-integrated.cjs
+node deliverables/verify-orbit-motion.cjs
 ```
 
 The audit compares every original section's text and content collections,
@@ -71,6 +82,11 @@ validates assets/anchors, checks the planet's scope and original interaction
 contracts, and checks JavaScript syntax. Browser QA separately verifies
 desktop/mobile rendering, navigation, signals, media, hardware, photos,
 FAQ, tutorial controls, and contact validation. QA never sends real emails.
+
+The motion suite loads the actual production math and controller in a small
+fake-document harness. It checks forward/reverse phases, paired row spacing,
+surface typography, idle scheduling, pause, reduced motion, focus, keyboard
+signals, resize coalescing, deep jumps and the shared renderer fallback.
 
 `deliverables/verify-experience.cjs` belongs to the preserved standalone
 edition; use the integrated audit on this branch.

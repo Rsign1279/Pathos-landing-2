@@ -1,5 +1,30 @@
 # PATHOS design record
 
+## Scroll-driven surface narrative · November 16, 2026
+
+The planet now delivers the content through a continuous, reversible turn.
+One scroll angle drives the sphere, words printed across its marble surface,
+the release point, curved tether and each original row's visual pose. There
+are no timed section entrances or ambient rotation. Stopping scroll stops
+the narrative; reversing it winds incoming copy back toward the surface.
+
+All 19 original sections and their exact content remain. The same 12 selected
+sections receive the effect. Sixty-nine meaningful content units keep their
+native document space, controls and original handlers. Paired columns share
+a trajectory and later rows stay clear of previously delivered copy. Once
+in the reading band, text is fully opaque, flat and selectable.
+
+On phones, a 110–125px sphere replaces the small thumbnail and emits from its
+lower surface into the full-width reading column. Pause and reduced motion
+show all content. Focused controls settle immediately. Decorative surface
+words are hidden from accessibility so the original content is read once.
+
+Geometry is cached and resize changes are coalesced. One renderer draws only
+while scrolling or responding to input, with no idle spin. The original
+chart/trace canvases use layout dimensions to survive resizing in transit.
+The source-preservation audit and production-motion harness are supplemented
+by desktop and phone browser checks and independent visual review.
+
 ## Integrated original + scoped planet · November 16, 2026
 
 The user requested that the standalone planetary redesign be preserved in a

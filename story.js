@@ -35,9 +35,9 @@ function stage(canvas, draw) {
   const ctx = canvas.getContext('2d');
   const s = { canvas, ctx, w: 1, h: 1, visible: false, t0: performance.now(), raf: 0 };
   const size = () => {
-    const r = canvas.getBoundingClientRect();
     const dpr = Math.min(2, devicePixelRatio || 1);
-    s.w = Math.max(1, r.width); s.h = Math.max(1, r.height);
+    // Visual story transforms must not change the canvas's drawing space.
+    s.w = Math.max(1, canvas.clientWidth); s.h = Math.max(1, canvas.clientHeight);
     canvas.width = Math.round(s.w * dpr); canvas.height = Math.round(s.h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     draw(s, reduced ? Infinity : performance.now());
@@ -304,7 +304,7 @@ for (const d of document.querySelectorAll('.faq-item')) {
    at a stale position and stops short; this aims, checks where the target
    really landed, and corrects until it sits at the scroll padding. */
 
-const padTop = el => (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0) + (innerWidth <= 640 && el?.closest('.planet-content') ? 108 : 0);
+const padTop = el => (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0) + (innerWidth <= 640 && el?.closest('.planet-content') ? (el.closest('.planet-story').querySelector('.planet-stage').offsetHeight + 16) : 0);
 let aimRun = 0;
 function aimAt(el, smoothFirst, initial = false) {
   const run = ++aimRun;
