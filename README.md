@@ -1,62 +1,83 @@
-# PATHOS — a world beneath the surface
+# PATHOS — integrated original + planetary story
 
-A static, locally served landing page. The opening uses one scroll-driven,
-stone-textured planet to tell the story behind PATHOS. Real prototype photos,
-software screens, the project film, and community evidence follow it.
+The founder's complete original landing page, with its 19 sections and
+interactive experiences retained. The new planetary narrative applies only
+to the twelve text sections selected in the reference screenshots.
 
-## Run locally
+The standalone planetary redesign is preserved on `main` in
+[Rsign1279/Pathos-landing-2](https://github.com/Rsign1279/Pathos-landing-2),
+at commit `df2831c`. Its production deployment is
+[pathos-landing-2.vercel.app](https://pathos-landing-2.vercel.app/).
+This integrated edition is on `integrate/original-planet-story`.
 
-From this directory, run:
+## Run
+
+No installation or build is needed to serve the checked-in page:
 
 ```sh
 python -m http.server 3000 --bind 127.0.0.1
 ```
 
-Open http://localhost:3000/. No installation or build step is required.
+Open http://localhost:3000/.
+
+## Preserved original work
+
+The marble-film hero, four proof results, project film, four-screen software
+tour, ten-chapter hardware study and 360 view, six-photo deck, contact form,
+and full footer remain in the page. They are outside the planet passages.
+
+Inside the passages, all original content and interactions remain:
+
+- Six partners, including roles, named mentors, coverage, and the press image.
+- The problem chart and its three arguments.
+- Four feature demonstrations and four selectable signal traces.
+- Four model steps and the WESAD limitation.
+- All six parts/controller rows, bus details, and component statuses.
+- MVP 2 plans, seven roadmap milestones, and five workshops.
+- The interactive place/verify/observe tutorial.
+- The founder's biography, role, photo, five credentials, and LinkedIn.
+- All four original FAQ questions and answers.
+
+`deliverables/original-page.html` retains the exact original markup from
+commit `6cfb566` so content preservation is directly auditable.
 
 ## Implementation
 
-- `index.html`, `experience.css`, and `experience.js`: the responsive page,
-  native chapter navigation, signal explorer, software tabs, native dialogs,
-  FAQ, and progressive enhancement.
-- `planet.js`: one analytic WebGL sphere, using the existing 114 KB marble
-  texture. No 3D model, framework, or postprocessing is needed for the planet.
-- `contact.js`: accessible validation and FormSubmit delivery. Delivery is
-  confirmed by the service; failures retain the visitor's text.
-- `hardware.html`, `hardware-launch.js`, and `prototype.js`: the original
-  engineering study, loaded only when a visitor opens it. Its image sequence
-  keeps at most 16 decoded frames and three concurrent requests.
-- `assets/fonts/`: locally served Figtree and EB Garamond, with OFL licenses.
+- `integration.css`: the new typography, palette, scoped planet layouts,
+  responsive reading layout, and shared visual refinements.
+- `integrated.css`: the existing styles plus the integration layer in one
+  request. Regenerate it after changing a source stylesheet.
+- `integration.js`: one shared optional WebGL planet across two passages.
+  Text remains normal HTML; the original UI modules keep their behavior.
+- `planet.js`: the lightweight analytic sphere and existing marble texture.
+- `prototype-loader.js`: loads the original in-page hardware study only near
+  its section. The study retains its bounded 16-frame cache.
+- `hero.js` and `film.js`: preserve the real films, with deferred loading,
+  visibility pauses, controls, and reduced-motion alternatives.
 
-The planet renders at a capped pixel ratio and approximately 30 visual updates
-per second. Rendering stops outside its section and while the page is hidden.
-The motion control and system motion preference provide a still alternative.
-Videos do not autoplay or preload. The hardware viewer does not load on the
-main page. All essential narrative text remains ordinary HTML.
+On phones the planet becomes a compact chapter companion, leaving the full
+screen width available for the original content. No nested scroll container
+or forced snapping is used. Fonts are served locally.
 
-## Verify
+## Rebuild and verify
 
 ```sh
-node deliverables/verify-experience.cjs
+node deliverables/build-integrated.cjs
+node deliverables/verify-integrated.cjs
 ```
 
-This zero-dependency audit checks source syntax, internal links and assets,
-landmarks, fallback behavior, loading boundaries, truthful project status,
-and the bounded hardware frame cache. It reports a source asset budget;
-it does not claim a Lighthouse score or measured network performance.
+The audit compares every original section's text and content collections,
+validates assets/anchors, checks the planet's scope and original interaction
+contracts, and checks JavaScript syntax. Browser QA separately verifies
+desktop/mobile rendering, navigation, signals, media, hardware, photos,
+FAQ, tutorial controls, and contact validation. QA never sends real emails.
 
-Browser QA covers phone, tablet, and desktop layouts; chapter navigation;
-signal buttons; keyboard software tabs; photo dialogs; FAQ; and form errors.
-No real contact messages are submitted during QA.
+`deliverables/verify-experience.cjs` belongs to the preserved standalone
+edition; use the integrated audit on this branch.
 
-## Content boundaries
+## Research status
 
-MVP 1's ESP32 and BME280 environmental pipeline is working. Physiological
-sensors, the wearable format, and caregiver alerts are in development for
-MVP 2. The hardware render is an engineering concept. WESAD model research
-has not been validated on PATHOS hardware. PATHOS is a wellness research
-prototype, not a medical device, and this site measures no visitor signals.
-
-The original assets and rendering scripts remain in the repository. Older
-stylesheets and page scripts are retained for history but are not requested
-by the redesigned landing page.
+The working MVP 1 uses the ESP32 and BME280 environmental pipeline. Body
+sensors, a wearable format, and caregiver alerts are MVP 2 development work.
+WESAD research is not validated accuracy on PATHOS hardware. The site measures
+no visitor physiological signals. PATHOS is not a medical device.

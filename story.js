@@ -304,7 +304,7 @@ for (const d of document.querySelectorAll('.faq-item')) {
    at a stale position and stops short; this aims, checks where the target
    really landed, and corrects until it sits at the scroll padding. */
 
-const padTop = () => parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+const padTop = el => (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0) + (innerWidth <= 640 && el?.closest('.planet-content') ? 108 : 0);
 let aimRun = 0;
 function aimAt(el, smoothFirst, initial = false) {
   const run = ++aimRun;
@@ -325,7 +325,7 @@ function aimAt(el, smoothFirst, initial = false) {
   let target = 0;
   const go = smoothNow => {
     const max = document.documentElement.scrollHeight - innerHeight;
-    target = clamp(Math.round(el.getBoundingClientRect().top + scrollY - padTop()), 0, Math.max(0, max));
+    target = clamp(Math.round(el.getBoundingClientRect().top + scrollY - padTop(el)), 0, Math.max(0, max));
     scrollTo({ top: target, behavior: smoothNow ? 'smooth' : 'instant' });
   };
   const check = () => {
@@ -333,7 +333,7 @@ function aimAt(el, smoothFirst, initial = false) {
     // Someone else moved the page (scrollbar, keyboard, script): stop here.
     // (On first load the browser's own fragment scroll may still move it.)
     if (!initial && Math.abs(scrollY - target) > 4) { aimRun++; return root.classList.remove('cv-open'); }
-    const off = el.getBoundingClientRect().top - padTop();
+    const off = el.getBoundingClientRect().top - padTop(el);
     if (Math.abs(off) <= 2 || tries >= (initial ? 10 : 6) || (initial && performance.now() - started > 1500)) return done();
     tries++;
     go(!reduced && Math.abs(off) < innerHeight * 1.5);

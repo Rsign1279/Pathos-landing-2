@@ -740,6 +740,7 @@ const FIELD_ERRORS = {
 function initContactForm() {
   const form = document.getElementById('contactForm');
   if (!form) return;
+  form.noValidate = true;
   const status = document.getElementById('formStatus');
   const button = form.querySelector('button[type="submit"]');
   const label = button.textContent;
@@ -751,6 +752,7 @@ function initContactForm() {
     if (err) { err.textContent = msg || ''; err.hidden = !msg; }
   };
   const check = f => {
+    if (f.type === 'email') f.value = f.value.trim();
     const ok = f.value.trim() !== '' && f.checkValidity();
     setError(f, ok ? '' : FIELD_ERRORS[f.name](f));
     return ok;
@@ -760,6 +762,7 @@ function initContactForm() {
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    if (button.disabled) return;
     const invalid = fields.filter(f => !check(f));
     if (invalid.length) {
       show(invalid.length === 1 ? 'One field needs attention.' : `${invalid.length} fields need attention.`, 'error');
@@ -776,7 +779,7 @@ function initContactForm() {
     button.disabled = true; button.textContent = 'Sending…';
     status.hidden = true;
     try {
-      const res = await fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload) });
+      const res = await fetch(form.dataset.ajaxAction || form.action, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload), signal: AbortSignal.timeout(20000) });
       const out = await res.json().catch(() => ({}));
       if (res.ok && String(out.success) === 'true') {
         show(`Thanks, ${payload.name}. Your message was sent, and we'll reply to ${payload.email}.`, 'success');

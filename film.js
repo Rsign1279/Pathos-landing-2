@@ -1,52 +1,129 @@
-/* ==========================================================================
-   The PATHOS film: plays on its own, on every device.
-
-   The video autoplays muted and loops with no controls (set in the markup,
-   so the browser starts it even before this script runs). This script:
-   - pauses it off screen and plays it on screen;
-   - restarts it if playback ever stalls while it is on screen;
-   - moves the thin gold progress line.
-   ========================================================================== */
-
+/* The original PATHOS film. Its poster loads first; video preparation begins
+   near the viewport. Native controls remain available, including when a
+   browser blocks autoplay or the visitor prefers reduced motion. */
 const stage = document.getElementById('filmStage');
 const video = document.getElementById('filmVideo');
 const bar = document.getElementById('filmScrub');
 
 if (stage && video) {
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let onScreen = false, near = false, prepared = false, userPaused = false;
+  let internalPause = false, blocked = false, pending = false, attempt = 0;
+  let frame = 0, videoFrame = false, retryTimer = 0, retries = 0;
+
   video.muted = true;
-  video.controls = false;
-  let onScreen = false, raf = 0, lastT = -1, stuck = 0;
+  video.loop = true;
+  video.playsInline = true;
+  video.controls = true;
+  video.preload = 'none';
+  video.setAttribute('aria-label', 'PATHOS in 44 seconds');
 
-  const tryPlay = () => {
-    if (!onScreen || document.hidden) return;
-    const p = video.play();
-    if (p && p.catch) p.catch(() => {});
+  const eligible = () => prepared && onScreen && !document.hidden && !reduced.matches && !userPaused && !blocked;
+  const clearRetry = () => { clearTimeout(retryTimer); retryTimer = 0; };
+  const drawBar = () => {
+    if (bar && Number.isFinite(video.duration) && video.duration > 0) {
+      bar.style.transform = `scaleX(${Math.min(1, video.currentTime / video.duration).toFixed(4)})`;
+    }
   };
-
+  const stopDraw = () => {
+    if (!frame) return;
+    if (videoFrame) video.cancelVideoFrameCallback(frame);
+    else cancelAnimationFrame(frame);
+    frame = 0;
+  };
   const draw = () => {
-    raf = 0;
-    if (bar && video.duration) bar.style.transform = `scaleX(${(video.currentTime / video.duration).toFixed(4)})`;
-    if (!video.paused) raf = requestAnimationFrame(draw);
+    frame = 0;
+    drawBar();
+    if (video.paused || !onScreen || document.hidden) return;
+    videoFrame = typeof video.requestVideoFrameCallback === 'function';
+    frame = videoFrame ? video.requestVideoFrameCallback(draw) : requestAnimationFrame(draw);
   };
-  video.addEventListener('play', () => { if (!raf) raf = requestAnimationFrame(draw); });
-  video.addEventListener('seeked', draw);
+  const pause = () => {
+    clearRetry();
+    stopDraw();
+    attempt++;
+    pending = false;
+    if (!video.paused) {
+      internalPause = true;
+      video.pause();
+    }
+  };
+  const scheduleRetry = () => {
+    if (!eligible() || retryTimer || retries >= 3) return;
+    retryTimer = setTimeout(() => {
+      retryTimer = 0;
+      if (!eligible()) return;
+      retries++;
+      tryPlay();
+      if (video.paused || video.readyState < 3) scheduleRetry();
+    }, 1500);
+  };
+  const tryPlay = () => {
+    if (!eligible() || pending) return;
+    const currentAttempt = ++attempt;
+    pending = true;
+    Promise.resolve(video.play()).then(() => {
+      if (currentAttempt !== attempt) return;
+      pending = false;
+      if (!onScreen || document.hidden || reduced.matches) pause();
+    }).catch(error => {
+      if (currentAttempt !== attempt) return;
+      pending = false;
+      if (!eligible()) return;
+      if (error.name === 'AbortError') scheduleRetry();
+      else { blocked = true; clearRetry(); }
+      // The native play control is a usable fallback; do not retry policy
+      // rejections continuously or override a visitor's deliberate pause.
+    });
+  };
+  const prepare = () => {
+    if (prepared || !near || document.hidden) return;
+    prepared = true;
+    if (!reduced.matches) {
+      video.preload = 'metadata';
+      video.load();
+    }
+  };
+  const update = () => {
+    prepare();
+    if (!onScreen || document.hidden || reduced.matches) pause();
+    else tryPlay();
+  };
 
-  new IntersectionObserver(es => {
-    onScreen = es[es.length - 1].isIntersecting;
-    if (onScreen) tryPlay(); else video.pause();
+  new IntersectionObserver((entries, observer) => {
+    near = entries[entries.length - 1].isIntersecting;
+    prepare();
+    if (prepared) observer.disconnect();
+  }, { rootMargin: '200px 0px' }).observe(stage);
+  new IntersectionObserver(entries => {
+    onScreen = entries[entries.length - 1].isIntersecting;
+    if (onScreen) near = true;
+    update();
   }, { threshold: 0.15 }).observe(stage);
-
-  // Watchdog: on screen but paused or frozen for ~3 s means something stopped
-  // it (a stall, a lost decoder, a browser pause); start it again.
-  setInterval(() => {
-    if (!onScreen || document.hidden) { stuck = 0; return; }
-    const frozen = video.paused || video.currentTime === lastT;
-    lastT = video.currentTime;
-    if (frozen && ++stuck >= 3) { stuck = 0; tryPlay(); }
-    else if (!frozen) stuck = 0;
-  }, 1000);
-
+  document.addEventListener('visibilitychange', update);
+  reduced.addEventListener ? reduced.addEventListener('change', update) : reduced.addListener(update);
+  video.addEventListener('play', () => {
+    userPaused = false;
+    blocked = false;
+    prepared = true;
+    if (!onScreen || document.hidden) pause();
+  });
+  video.addEventListener('playing', () => {
+    retries = 0;
+    clearRetry();
+    if (!frame) draw();
+  });
+  video.addEventListener('pause', () => {
+    clearRetry();
+    stopDraw();
+    if (internalPause) internalPause = false;
+    else if (onScreen && !document.hidden) userPaused = true;
+  });
   video.addEventListener('canplay', tryPlay);
-  video.addEventListener('stalled', tryPlay);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) tryPlay(); });
+  video.addEventListener('waiting', scheduleRetry);
+  video.addEventListener('stalled', scheduleRetry);
+  video.addEventListener('timeupdate', () => { retries = 0; clearRetry(); drawBar(); });
+  video.addEventListener('seeked', drawBar);
+  video.addEventListener('loadedmetadata', drawBar);
+  video.addEventListener('error', () => { blocked = true; clearRetry(); stopDraw(); });
 }

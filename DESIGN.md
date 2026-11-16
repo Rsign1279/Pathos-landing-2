@@ -1,5 +1,34 @@
 # PATHOS design record
 
+## Integrated original + scoped planet · November 16, 2026
+
+The user requested that the standalone planetary redesign be preserved in a
+new repository, while the actual edit restores the founder's original work.
+The standalone edition is saved on Pathos-landing-2/main at `df2831c`.
+This integrated edition preserves every one of the original 19 sections.
+
+The planet is limited to two passages matching the screenshot selection:
+Partners → Problem → Meet PATHOS → Signals → Model → Parts, then MVP 2 →
+Roadmap → Workshops → How it works → Founder → FAQ. Their full original
+copy and UI remain normal document content. A single renderer moves between
+the two passage stages. On phones it becomes a compact pinned companion.
+
+The marble hero, proof results, film, software tour, in-page 3D hardware
+study, original photo deck, contact form and footer are preserved outside
+the planet passages. Only decorative margin canvases inside those passages
+are replaced. All meaningful charts and controls stay.
+
+Garamond, Figtree, ivory, bronze and lavender carry the new visual voice.
+The original UI styles are consolidated into one generated CSS request,
+then narrowly adapted to the dark planetary passages and full-width media.
+The bounded hardware cache, local fonts, deferred films and visibility-based
+rendering keep the complete page economical.
+
+`deliverables/original-page.html` stores exact original markup, and
+`deliverables/verify-integrated.cjs` checks section text, collection counts,
+scope, assets, anchors and interaction contracts. This entry supersedes
+the earlier replacement-page architecture described below.
+
 ## Planetary narrative · November 16, 2026
 
 The new landing page is authored in `experience.css` and `experience.js`,
