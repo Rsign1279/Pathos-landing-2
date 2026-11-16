@@ -1,5 +1,5 @@
 import {createPlanet} from './planet.js';
-import {clamp,turnRate,angleAt,revealAt,surfacePoint,emergePose} from './orbit-motion.js';
+import {clamp,turnRate,angleAt,revealAt,surfacePoint,emergePose,planReadingChunks} from './orbit-motion.js';
 
 // Original nodes and native document spaces remain intact. The visual layers
 // unroll from the sphere; their copy, controls and handlers stay untouched.
@@ -17,7 +17,7 @@ const groups=[...document.querySelectorAll('[data-planet-story]')].map(element=>
 const motion=matchMedia('(prefers-reduced-motion:reduce)');
 const control=document.getElementById('planetMotion');
 const canvas=document.createElement('canvas');canvas.setAttribute('aria-hidden','true');canvas.id='integratedPlanet';
-let renderer=null,initializing=null,unavailable=false,active=null,frame=0,needsMeasure=true,dirty=true,lastTime=0,lastDraw=0,lastQuality=0,lastMeasure=-Infinity,scroll=scrollY,lastPointer=-Infinity;
+let renderer=null,initializing=null,unavailable=false,active=null,frame=0,needsMeasure=true,dirty=true,lastTime=0,lastDraw=0,lastQuality=0,lastMeasure=-Infinity,scroll=scrollY,presentedScroll=scrollY,lastPointer=-Infinity;
 let height=innerHeight,mobile=innerWidth<=640,rate=turnRate(height);
 let paused=motion.matches,userOverride=false;
 const wake=()=>{if(!frame&&!document.hidden)frame=requestAnimationFrame(tick);};
@@ -51,8 +51,19 @@ function measure(){
       row.units.push(unit);row.left=Math.min(row.left,unit.left);row.bottom=Math.max(row.bottom,unit.top+unit.height);
     }
     for(const row of group.rows){
-      row.start=angleAt(row.top-height*(mobile?.98:1.02),group.top,base,rate);
-      row.end=angleAt(row.top-height*(mobile?.63:.64),group.top,base,rate);
+      row.chapter=0;for(let i=1;i<group.bounds.length;i++)if(row.top>=group.bounds[i].top)row.chapter=i;
+    }
+    group.chunks=planReadingChunks(group.rows,{
+      height,mobile,readingTop:group.stickyTop+(mobile?group.stageHeight:0),
+      firstVisibleAt:group.top+group.padding+group.sphere.y+group.sphere.radius*(mobile?.92:.24)-(height-24)
+    });
+    for(let index=0;index<group.chunks.length;index++){
+      const chunk=group.chunks[index];
+      for(const fragment of chunk.fragments){
+        const row=fragment.row;row.chunk=chunk;
+        row.start=angleAt(fragment.start,group.top,base,rate);row.end=angleAt(fragment.end,group.top,base,rate);
+        for(const unit of row.units)unit.element.dataset.orbitChunk=String(index);
+      }
     }
     base+=(group.bottom-group.top+height)*rate;
   }
@@ -91,13 +102,13 @@ function updateGroup(group,y){
   group.surface.style.setProperty('--stone-turn',(group.angle*.22)+'rad');
   const source=surfacePoint(group.angle,group.sphere,mobile);
   const stageTop=Math.max(group.top+group.padding,Math.min(y+group.stickyTop,group.bottom-group.paddingBottom-group.stageHeight));
+  for(const unit of group.units)if(unit.pinned&&!unit.focused&&(unit.top+unit.height<y||unit.top>y+height))unit.pinned=false;
+  for(const chunk of group.chunks)chunk.pinned=paused||chunk.rows.some(part=>part.units.some(unit=>unit.pinned));
   let lead=null,readingBottom=-Infinity;
   for(const row of group.rows){
-    for(const unit of row.units)if(unit.pinned&&!unit.focused&&(unit.top+unit.height<y||unit.top>y+height))unit.pinned=false;
-    let p=paused||row.units.some(unit=>unit.pinned)?1:revealAt(angle,row.start,row.end);
+    let p=row.chunk.pinned?1:revealAt(angle,row.start,row.end);
     // A scrollbar jump must not project distant blocks into this viewport.
     if(row.bottom<y||row.top-y<height*.48)p=1;
-    if(!paused&&!row.units.some(unit=>unit.pinned)&&row.top>y+height*1.12)p=0;
     const pose=emergePose(p,group.left+source.x-row.left,stageTop+source.y-row.top,mobile);
     if(p>0&&p<1){
       // Protect previously delivered copy. The horizontal unrolling continues
@@ -141,15 +152,21 @@ function tick(time){
   const delta=y-scroll;
   if(!active||paused||Math.abs(delta)>height*1.5)scroll=y;
   else scroll+=delta*(1-Math.exp(-elapsed/42));
+  // Reading deadlines use the actual viewport. Catch the shared angle up at
+  // a completed chunk boundary so smoothing cannot leave its last part late.
+  let deadlineCaughtUp=false;
+  if(active&&!paused&&delta>0){
+    for(const chunk of active.chunks)if(chunk.end<=y&&chunk.end>presentedScroll){scroll=Math.max(scroll,chunk.end);deadlineCaughtUp=true;}
+  }
   const settled=Math.abs(y-scroll)<.15;if(settled)scroll=y;
-  const canDraw=time-lastDraw>=(mobile?1000/30:1000/45)||settled;
+  const canDraw=time-lastDraw>=(mobile?1000/30:1000/45)||settled||deadlineCaughtUp;
   if(canDraw&&(dirty||!settled)){
     for(const group of groups)if(group.top<y+height*1.2&&group.bottom>y-height*.2)updateGroup(group,y);
     if(active){
       mount(active);
       if(renderer){const started=performance.now();renderer.render(active.angle,active.signal);if(performance.now()-started>20&&time-lastQuality>2000){renderer.lowerQuality();lastQuality=time;}}
     }
-    lastDraw=time;dirty=false;
+    lastDraw=time;presentedScroll=scroll;dirty=false;
   }
   // No idle spin: sphere and copy both stop at this angle.
   if(!settled||needsMeasure){dirty=true;wake();}else lastTime=0;
