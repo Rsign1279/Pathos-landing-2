@@ -56,8 +56,15 @@ commit `6cfb566` so content preservation is directly auditable.
   material-anchored logo engraving with recessed, light-catching bevels.
 - `brand.css` and `assets/brand/`: the supplied Pathos IoT identity, rebuilt
   as crisp vectors for navigation, footer, icons and social previews.
-- `prototype-loader.js`: loads the original in-page hardware study only near
-  its section. The study retains its bounded 16-frame cache.
+- `prototype-loader.js`: prepares the original in-page hardware study one
+  viewport ahead. Playback uses the original 2 MB model and full texture
+  sources on every device, at native display pixel density. It downloads no
+  pre-rendered frame sequence by default.
+- `hardware-quality.js`: bounds extreme drawing-buffer allocations to 8 Mi
+  pixels and the GPU's dimension limit, preserving native pixels on normal
+  desktop and phone viewports. Slow frames never reduce resolution.
+  Large drawing buffers are released when hidden or offscreen and restored
+  before the study returns; the model stays ready without another download.
 - `hero.js` and `film.js`: preserve the real films, with deferred loading,
   visibility pauses, controls, and reduced-motion alternatives.
 
@@ -90,6 +97,7 @@ node deliverables/build-integrated.cjs
 node deliverables/verify-integrated.cjs
 node deliverables/verify-orbit-motion.cjs
 node deliverables/verify-brand.cjs
+node deliverables/verify-hardware.cjs
 ```
 
 The audit compares every original section's text and content collections,
@@ -102,6 +110,13 @@ The motion suite loads the actual production math and controller in a small
 fake-document harness. It checks forward/reverse phases, paired row spacing,
 surface typography, idle scheduling, pause, reduced motion, focus, keyboard
 signals, resize coalescing, deep jumps and the shared renderer fallback.
+
+With Playwright available to Node, `node deliverables/verify-hardware-browser.cjs`
+checks real native-resolution rendering, chapter seeking, 360 and zoom, idle
+rendering, offscreen buffer release and full-resolution return at desktop 2×
+and mobile 3× pixel density. It saves screenshots in the OS temporary folder
+unless `PATHOS_QA_OUTPUT` is set. These emulate layouts on the test computer;
+they do not measure every phone or GPU.
 
 `deliverables/verify-experience.cjs` belongs to the preserved standalone
 edition; use the integrated audit on this branch.

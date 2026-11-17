@@ -13,23 +13,23 @@
      through the four v1 screenshots on the film's frames, the wallpaper is the
      marble artwork, and the table carries the marble panel at the right edge
      of the frame during the opening and closing shots.
-   - Renders only when something changed and only while on screen; pixel
-     ratio adapts if frames get slow.
+   - Renders the original geometry at native display resolution, only when
+     something changes on screen. No film-sized decoded image cache.
    ========================================================================== */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { hardwareResolution } from './hardware-quality.js';
 
 const FPS = 60, FIRST = 1, LAST = 2880;
 // The film's frame: 16:9 on a 36 mm-wide sensor.
 const FILM_ASPECT = 16 / 9;
-const MOBILE = innerWidth < 820 || matchMedia('(pointer: coarse)').matches;
-const MODEL = MOBILE ? './assets/pathos-hardware-mobile.glb' : './assets/pathos-hardware.glb';
-const SHOT = MOBILE ? '-sm' : '';
+const MODEL = './assets/pathos-hardware.glb';
+const SHOT = '';
 const PAGES = ['live-instrument', 'model-study', 'source-data', 'diagnostics'].map(p => `./assets/v1-${p}${SHOT}.webp`);
-const MARBLE = MOBILE ? './assets/marble-sm.webp' : './assets/marble.webp';
+const MARBLE = './assets/marble.webp';
 
 const section = document.getElementById('prototype');
 const track = document.getElementById('hwTrack');
@@ -65,7 +65,9 @@ const SEQ = { step: 6, w: 1600, h: 800, fw: 1280, fh: 720, url: k => `./assets/h
 SEQ.n = Math.floor((LAST - FIRST) / SEQ.step) + 1;
 // ?bake renders frames for that sequence; nothing else runs.
 const BAKE = new URLSearchParams(location.search).has('bake') ? { w: SEQ.w, h: SEQ.h, s: 1.5 } : null;
-let USE_SEQ = !BAKE && !MOBILE && !window.__hwLive;
+// The native 3D film is the default on every device. Keep the historical
+// sequence available only for explicit comparison, never as a quality tier.
+let USE_SEQ = !BAKE && window.__hwSequence === true;
 
 /* ---------- Film timing (from the Blender file) ---------- */
 
@@ -210,7 +212,8 @@ layoutFilm(view.clientWidth || 1, view.clientHeight || 1);
 
 const stats = { ready: false, frames: 0, drawCalls: 0, triangles: 0, quality: 0, model: MODEL, page: 0, gpu: '', low: false, shadow: 0 };
 let renderer, scene, camera, mixer;
-let cur = FIRST, tgt = FIRST, visible = false, dirty = true, raf = 0, last = 0, slow = 0, quality = 1;
+let cur = FIRST, tgt = FIRST, visible = false, dirty = true, raf = 0, last = 0;
+let appliedFrame = NaN, renderWidth = 0, renderHeight = 0, renderRatio = 0, maxRenderDimension = 8192;
 const pickables = [];
 const actions = [];
 // 360 view: 'film' follows the Blender camera; 'orbit' is the visitor's own.
@@ -275,11 +278,14 @@ function resize() {
   }
   if (USE_SEQ) seqResize(w, h);
   if (!renderer) return;
-  // Built-in laptop graphics render at up to 1x; others up to 1.75x (1.35x on
-  // phones). Adaptive quality can then go below 1x on a slow machine.
-  const cap = LOW_GPU ? Math.min(devicePixelRatio || 1, 1) : Math.min(devicePixelRatio || 1, MOBILE ? 1.35 : 1.75);
-  renderer.setPixelRatio(BAKE ? BAKE.s : Math.max(0.55, cap * quality));
-  renderer.setSize(w, h, false);
+  const resolution = hardwareResolution(w, h, devicePixelRatio || 1, maxRenderDimension);
+  const ratio = BAKE ? BAKE.s : resolution.ratio;
+  // Repeated resize notifications must not reallocate the same GPU buffers.
+  if (w !== renderWidth || h !== renderHeight || ratio !== renderRatio) {
+    renderWidth = w; renderHeight = h; renderRatio = ratio;
+    renderer.setPixelRatio(ratio);
+    renderer.setSize(w, h, false);
+  }
   camera.aspect = w / h;
   setLens(lensAt(Math.round(cur)));
   if (film.lift) camera.setViewOffset(w, h, 0, film.lift, w, h);
@@ -288,7 +294,9 @@ function resize() {
   // Film frame in drawing-buffer pixels, origin bottom-left (gl_FragCoord).
   const k = renderer.getDrawingBufferSize(new THREE.Vector2()).x / w;
   uFilm.value.set(film.x * k, (h - film.y - film.h) * k, film.w * k, film.h * k);
-  stats.quality = quality;
+  stats.quality = 1;
+  stats.pixelRatio = ratio;
+  stats.bufferPixels = renderer.domElement.width * renderer.domElement.height;
   dirty = true;
   wake();
 }
@@ -315,13 +323,19 @@ function apply(frame) {
   // play-once clips: once one reaches its end three.js pauses it, and a later
   // setTime rewinds it to 0 without advancing, snapping parts to their
   // starting pose.)
-  const t = frame / FPS;
-  for (const a of actions) {
-    a.enabled = true;
-    a.paused = false;
-    a.time = Math.min(t, a.getClip().duration);
+  if (frame !== appliedFrame) {
+    const t = frame / FPS;
+    for (const a of actions) {
+      a.enabled = true;
+      a.paused = false;
+      a.time = Math.min(t, a.getClip().duration);
+    }
+    mixer.update(0);
+    appliedFrame = frame;
+    // A camera orbit changes no caster geometry, so reuse its full-resolution
+    // shadow. Film motion explicitly invalidates it when the pose changes.
+    renderer.shadowMap.needsUpdate = true;
   }
-  mixer.update(0);
   const fi = Math.round(frame);
   if (lensAt(fi) !== shownLens) setLens(lensAt(fi));
   showPage(pageAt(fi));
@@ -439,7 +453,7 @@ function labelFor(obj) {
 
 function render(now) {
   raf = 0;
-  if (!visible) return;
+  if (!visible || document.hidden) return;
   const dt = Math.min(0.1, (now - (last || now)) / 1000);
   last = now;
 
@@ -479,26 +493,28 @@ function render(now) {
     stats.drawCalls = renderer.info.render.calls;
     stats.triangles = renderer.info.render.triangles;
     dirty = false;
-    // Adaptive quality: if frames stay well behind the screen's own rate
-    // (frameBudget), first halve the shadow map, then lower the pixel ratio
-    // step by step.
-    if (dt > frameBudget) {
-      if (++slow > 10) {
-        slow = 0;
-        if (shadowSize > 1024) setShadowSize(1024);
-        else if (quality > 0.6) { quality = Math.max(0.55, quality - 0.15); resize(); }
-      }
-    } else slow = Math.max(0, slow - 1);
   }
   if (moving) raf = requestAnimationFrame(render);
   else last = 0;
 }
 function wake() { if (!raf && visible && !document.hidden) raf = requestAnimationFrame(render); }
+function releaseDrawBuffer() {
+  if (!renderer || BAKE || USE_SEQ) return;
+  // Keep the model for instant return, but surrender large color/depth/MSAA
+  // buffers while nobody can see the study. CSS size stays unchanged.
+  renderer.setSize(1, 1, false);
+  renderWidth = renderHeight = renderRatio = 0;
+  stats.bufferPixels = renderer.domElement.width * renderer.domElement.height;
+}
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     if (raf) cancelAnimationFrame(raf);
     raf = 0; last = 0;
-  } else { dirty = true; wake(); seqPump(); }
+    releaseDrawBuffer();
+  } else {
+    if (visible && renderer && !renderWidth) resize();
+    dirty = true; wake(); seqPump();
+  }
 });
 
 /* ---------- Pre-rendered film ---------- */
@@ -630,7 +646,6 @@ function showLive(on) {
 function startGL() {
   if (glStarted) return;
   glStarted = true;
-  measureFrameBudget();
   if (USE_SEQ) { statusEl.textContent = 'Loading the 3D model…'; statusEl.hidden = false; }
   init().catch(err => {
     console.warn('PATHOS 3D (live) unavailable:', err.message);
@@ -705,47 +720,7 @@ const LIGHTS = [
 ];
 const LIGHT_SCALE = window.__hwTune?.light ?? 0.8;
 
-// Built-in laptop/phone graphics (Intel UHD/Iris, AMD Radeon Graphics, ...)
-// start lighter: 1x pixels and a 1024 shadow map. Read once from a throwaway
-// context so the real renderer is created with the right settings.
-const GPU = (() => {
-  try {
-    const gl = document.createElement('canvas').getContext('webgl');
-    const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
-    const name = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
-    gl?.getExtension('WEBGL_lose_context')?.loseContext();
-    return name;
-  } catch (e) { return ''; }
-})();
-const LOW_GPU = /intel|uhd|iris|hd graphics|mali|adreno|powervr|radeon\(tm\) graphics|vega \d+ graphics|swiftshader|llvmpipe/i.test(GPU) && !/apple/i.test(GPU);
-let shadowSize = BAKE ? 2048 : LOW_GPU || MOBILE ? 1024 : 2048;
-// A frame counts as slow when it takes 1.45x the screen's normal interval
-// (24 ms at 60 Hz), measured once, so a 30 fps cap such as Chrome's Energy
-// Saver isn't mistaken for a slow graphics chip.
-let frameBudget = 0.024;
-function measureFrameBudget() {
-  const gaps = [];
-  let l = 0;
-  const f = t => {
-    if (l) gaps.push(t - l);
-    l = t;
-    if (gaps.length < 40) { requestAnimationFrame(f); return; }
-    gaps.sort((a, b) => a - b);
-    frameBudget = Math.max(0.024, (gaps[20] / 1000) * 1.45);
-    stats.budget = frameBudget;
-  };
-  requestAnimationFrame(f);
-}
-function setShadowSize(n) {
-  shadowSize = n;
-  scene.traverse(o => {
-    if (!o.isLight || !o.castShadow || o.shadow.mapSize.x === n) return;
-    o.shadow.mapSize.set(n, n);
-    if (o.shadow.map) { o.shadow.map.dispose(); o.shadow.map = null; }
-  });
-  stats.shadow = n;
-  dirty = true;
-}
+const shadowSize = 2048;
 const yUp = ([x, y, z]) => new THREE.Vector3(x, z, -y);
 
 async function init() {
@@ -754,18 +729,28 @@ async function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   } catch (e) { throw new Error('WebGL unavailable'); }
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  stats.gpu = GPU; stats.low = LOW_GPU; stats.shadow = shadowSize;
+  stats.shadow = shadowSize;
   // The film is graded with AgX at -0.12 EV.
   renderer.toneMapping = THREE.AgXToneMapping;
   renderer.toneMappingExposure = Math.pow(2, -0.12);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
+  const context = renderer.getContext();
+  maxRenderDimension = context.getParameter(context.MAX_RENDERBUFFER_SIZE);
+  // Inspect the actual renderer, without allocating a second probe context.
+  const gpuInfo = context.getExtension('WEBGL_debug_renderer_info');
+  stats.gpu = String(context.getParameter(gpuInfo ? gpuInfo.UNMASKED_RENDERER_WEBGL : context.RENDERER));
   renderer.setClearColor(0x060607, 1);
   renderer.domElement.setAttribute('aria-hidden', 'true');
 
   scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  const room = new RoomEnvironment(renderer);
+  scene.environment = pmrem.fromScene(room, 0.04).texture;
+  room.dispose();
+  pmrem.dispose();
   scene.environmentIntensity = 0.22;
 
   for (const L of LIGHTS) {
@@ -785,6 +770,7 @@ async function init() {
   }
 
   const draco = new DRACOLoader();
+  draco.setWorkerLimit(2);
   draco.setDecoderPath('./assets/vendor/draco/');
   draco.setDecoderConfig({ type: 'wasm' });
   const loader = new GLTFLoader();
@@ -889,7 +875,8 @@ async function init() {
   resize();
   // Warm the GPU: compile shaders and upload geometry before the first scroll frame.
   apply(FIRST);
-  renderer.compile(scene, camera);
+  if (renderer.compileAsync) await renderer.compileAsync(scene, camera);
+  else renderer.compile(scene, camera);
   new ResizeObserver(resize).observe(view);
 
   cur = tgt = frameAt(scrollProgress());
@@ -910,14 +897,23 @@ async function init() {
   // Use the latest entry: a fast jump can queue several in one callback.
   new IntersectionObserver(entries => {
     visible = entries[entries.length - 1].isIntersecting;
-    if (visible) { dirty = true; wake(); }
-    else if (mode === 'orbit') { exitOrbit(); tween = null; }   // leaving the section ends the 360 view
+    if (visible) {
+      if (!renderWidth && !document.hidden) resize();
+      dirty = true; wake();
+    } else {
+      if (mode === 'orbit') { exitOrbit(); tween = null; }
+      releaseDrawBuffer();
+    }
   }, { rootMargin: '120px 0px' }).observe(stage);
   // Backstop for a missed observer callback: on scroll, confirm visibility directly.
   addEventListener('scroll', () => {
     if (!visible) {
       const r = stage.getBoundingClientRect();
-      if (r.bottom > -120 && r.top < innerHeight + 120) { visible = true; dirty = true; }
+      if (r.bottom > -120 && r.top < innerHeight + 120) {
+        visible = true;
+        if (!renderWidth && !document.hidden) resize();
+        dirty = true;
+      }
     }
     wake();
   }, { passive: true });
@@ -926,6 +922,9 @@ async function init() {
   // labels the part under it, hovering names it. The 360 view is the only
   // mode in which dragging moves the camera.
   const canvas = renderer.domElement;
+  canvas.addEventListener('webglcontextrestored', () => {
+    renderer.shadowMap.needsUpdate = true; dirty = true; wake();
+  });
   canvas.style.touchAction = 'pan-y';
   // The mouse wheel always scrolls the page (trackpad pinch, sent as
   // ctrl+wheel, still zooms in the 360 view). Registered before the
@@ -1041,7 +1040,7 @@ const start = () => {
   near.disconnect();
   if (USE_SEQ) seqStart(); else startGL();
 };
-const near = new IntersectionObserver(es => { if (es[es.length - 1].isIntersecting) start(); }, { rootMargin: '25% 0px' });
+const near = new IntersectionObserver(es => { if (es[es.length - 1].isIntersecting) start(); }, { rootMargin: '100% 0px' });
 near.observe(stage);
 if (BAKE) {
   // Offline rendering of the sequence (deliverables/hw-bake.cjs).

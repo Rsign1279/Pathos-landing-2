@@ -99,7 +99,7 @@ const css=read('integrated.css');
 check(!/fonts\.(?:googleapis|gstatic)\.com/.test(current+css),'Integrated page must serve fonts locally');
 check(css.includes(read('integration.css')),'The served CSS bundle must include the current integration stylesheet');
 check(css.includes(read('brand.css')),'The served CSS bundle must include the current brand stylesheet');
-const changedScripts=['main.js','story.js','play.js','integration.js','orbit-motion.js','prototype-loader.js','planet.js','prototype.js','hero.js','film.js','deliverables/build-integrated.cjs'];
+const changedScripts=['main.js','story.js','play.js','integration.js','orbit-motion.js','prototype-loader.js','planet.js','prototype.js','hardware-quality.js','hero.js','film.js','deliverables/build-integrated.cjs'];
 for(const script of changedScripts){const result=spawnSync(process.execPath,['--check',path.join(root,script)],{encoding:'utf8'});check(result.status===0,`${script}: JavaScript syntax error ${result.stderr}`);}
 
 const pages=['index.html','hardware.html','privacy.html','404.html'];

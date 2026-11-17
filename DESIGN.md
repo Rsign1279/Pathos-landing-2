@@ -1,5 +1,21 @@
 # Pathos IoT design record
 
+## Original hardware animation at native resolution · November 16, 2026
+
+The Blender hardware study again renders its original 3D animation rather
+than enlarging and blending 1280 × 720 film samples. Phones receive the same
+geometry and texture sources. Native device pixels, antialiasing and 2048px
+shadows preserve detail; resolution never decays in response to slow frames.
+
+The 2 MB compressed model prepares one viewport before entry. Decoder workers
+are limited to two, shader compilation is asynchronous where supported, and
+environment scratch resources are released. Unchanged poses reuse animation
+evaluation and shadow maps. Nothing renders at rest, offscreen or in a hidden
+tab, and large draw buffers are released until the study returns. Extreme
+viewports use an 8 Mi pixel allocation ceiling and GPU limits.
+The historical frame sequence remains opt-in for comparisons. Original film
+timing, all ten shots, labels, 360 controls and reduced motion remain intact.
+
 ## Supplied identity and engraved stone · November 16, 2026
 
 The supplied pulse-P emblem, crossbar-free A, spaced wordmark and IoT subline
