@@ -8,7 +8,7 @@ fs.mkdirSync(out,{recursive:true});
 (async()=>{
  const browser=await chromium.launch({headless:true,args:process.platform==='win32'?['--use-angle=d3d11','--enable-webgl','--enable-precise-memory-info']:['--enable-precise-memory-info']});
  try {
-  for(const device of [{name:'desktop',width:1440,height:1000,dpr:2},{name:'mobile',width:390,height:844,dpr:3}].filter(d=>!process.env.HW_QA_DEVICE||d.name===process.env.HW_QA_DEVICE)){
+  for(const device of [{name:'desktop',width:1440,height:1000,dpr:1},{name:'desktop-retina',width:1440,height:1000,dpr:2},{name:'mobile',width:390,height:844,dpr:3}].filter(d=>!process.env.HW_QA_DEVICE||d.name===process.env.HW_QA_DEVICE)){
    const context=await browser.newContext({viewport:{width:device.width,height:device.height},deviceScaleFactor:device.dpr,isMobile:device.name==='mobile',hasTouch:device.name==='mobile'});
    const page=await context.newPage(),errors=[],requests=[];
    page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
@@ -31,14 +31,19 @@ fs.mkdirSync(out,{recursive:true});
    await page.waitForTimeout(300);
    const result=await page.evaluate(()=>{
     const p=pathosPrototype,c=p.debug.renderer.domElement;
-    return {state:p.state,stats:p.stats,buffer:[c.width,c.height],css:[c.clientWidth,c.clientHeight],dpr:devicePixelRatio,memory:performance.memory?.usedJSHeapSize,geometries:p.debug.renderer.info.memory.geometries,textures:p.debug.renderer.info.memory.textures};
+    return {state:p.state,stats:p.stats,film:{width:p.film.w,height:p.film.h},buffer:[c.width,c.height],css:[c.clientWidth,c.clientHeight],dpr:devicePixelRatio,memory:performance.memory?.usedJSHeapSize,geometries:p.debug.renderer.info.memory.geometries,textures:p.debug.renderer.info.memory.textures};
    });
    assert.equal(result.state.seq,false);assert.equal(result.stats.model,'./assets/pathos-hardware.glb');assert.equal(result.stats.quality,1);
    assert.equal(result.stats.shadow,2048);assert.equal(result.stats.frames,before,'Hardware draws must stop at rest');
-   assert.equal(result.buffer[0],Math.floor(result.css[0]*device.dpr));assert.equal(result.buffer[1],Math.floor(result.css[1]*device.dpr));
+   assert.equal(result.buffer[0],Math.floor(result.css[0]*result.stats.pixelRatio));assert.equal(result.buffer[1],Math.floor(result.css[1]*result.stats.pixelRatio));
+   assert(result.stats.pixelRatio>=device.dpr,'HD floor cannot discard native retina pixels');
+   assert(result.buffer[0]*result.buffer[1]<=8*1024*1024,'HD hardware buffers stay within allocation budget');
+   assert(result.film.width*result.stats.pixelRatio>=1919.99&&result.film.height*result.stats.pixelRatio>=1079.99,'The actual Blender picture must be 1920 × 1080 or better on every tested layout');
+   assert(result.stats.picturePixels[0]>=1920&&result.stats.picturePixels[1]>=1080,'Reported physical film dimensions meet Full HD');
+   if(result.stats.pixelRatio/device.dpr>=1.5)assert.equal(result.stats.antialias,false,'Supersampled output must not allocate duplicate MSAA buffers');
    assert.equal(requests.filter(u=>u.includes('/hw-seq/')).length,0,'Native playback must not download film frames');
    assert.equal(requests.filter(u=>u.includes('hardware-mobile.glb')).length,0);
-   await page.locator('#hwStage').screenshot({path:path.join(out,'pathos-hardware-native-'+device.name+'.png')});
+   await page.locator('#hwStage').screenshot({path:path.join(out,'pathos-hardware-hd-'+device.name+'.png')});
    await page.locator('#hw360').click();
    await page.waitForFunction(()=>pathosPrototype.state.mode==='orbit'&&!pathosPrototype.state.tweening&&!pathosPrototype.state.rendering);
    const texturesBefore=result.textures;
@@ -53,11 +58,11 @@ fs.mkdirSync(out,{recursive:true});
    await page.waitForFunction(()=>!pathosPrototype.state.visible);
    const stopped=await page.evaluate(()=>pathosPrototype.stats.frames);await page.waitForTimeout(300);
    assert.equal(await page.evaluate(()=>pathosPrototype.stats.frames),stopped,'No offscreen hardware renders');
-   assert(await page.evaluate(()=>pathosPrototype.stats.bufferPixels)<=device.dpr**2,'Offscreen render buffers must be released');
+   assert(await page.evaluate(()=>pathosPrototype.stats.bufferPixels)<=Math.ceil(result.stats.pixelRatio)**2,'Offscreen render buffers must be released');
    await page.evaluate(()=>scrollTo({top:pathosPrototype.scrollYForFrame(1360),behavior:'instant'}));
    await page.waitForFunction(()=>pathosPrototype.state.visible&&pathosPrototype.stats.bufferPixels>10000&&!pathosPrototype.state.rendering);
-   assert.deepEqual(await page.evaluate(()=>[pathosPrototype.debug.renderer.domElement.width,pathosPrototype.debug.renderer.domElement.height]),result.buffer,'Return restores native resolution');
-   console.log(JSON.stringify({device:device.name,readyMs,buffer:result.buffer,css:result.css,pixelRatio:result.stats.pixelRatio,geometries:result.geometries,textures:result.textures,heapMiB:Math.round(result.memory/1048576),gpu:result.stats.gpu,frames:result.stats.frames,errors,passed:'Native resolution, chapter seeking, original model, zero sequence downloads, 360/zoom/return, idle, offscreen release and return'}));
+   assert.deepEqual(await page.evaluate(()=>[pathosPrototype.debug.renderer.domElement.width,pathosPrototype.debug.renderer.domElement.height]),result.buffer,'Return restores Full HD resolution');
+   console.log(JSON.stringify({device:device.name,readyMs,buffer:result.buffer,filmPixels:result.stats.picturePixels,antialias:result.stats.antialias,css:result.css,pixelRatio:result.stats.pixelRatio,geometries:result.geometries,textures:result.textures,heapMiB:Math.round(result.memory/1048576),gpu:result.stats.gpu,frames:result.stats.frames,errors,passed:'Full HD actual Blender picture, chapter seeking, original model, zero sequence downloads, 360/zoom/return, idle, offscreen release and return'}));
    await context.close();
   }
  }finally{await browser.close();}

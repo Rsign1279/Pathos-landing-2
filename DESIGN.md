@@ -1,5 +1,16 @@
 # Pathos IoT design record
 
+## Full HD hardware picture · November 16, 2026
+
+The hardware rig now has a 1920 × 1080 picture minimum even on 1× displays.
+The calculation uses the film rectangle after camera layout, so letterboxing
+cannot silently reduce the rig to 720p. Denser native displays retain their
+detail within the GPU and 8 Mi pixel allocation limits. On small views already
+rendered well above screen density, supersampling replaces redundant MSAA
+storage. Existing lazy preparation, original animation, controls and offscreen
+buffer release remain. The planetary sequence and original page content are
+unchanged by this hardware correction.
+
 ## Original hardware animation at native resolution · November 16, 2026
 
 The Blender hardware study again renders its original 3D animation rather

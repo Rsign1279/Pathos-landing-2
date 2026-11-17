@@ -58,11 +58,13 @@ commit `6cfb566` so content preservation is directly auditable.
   as crisp vectors for navigation, footer, icons and social previews.
 - `prototype-loader.js`: prepares the original in-page hardware study one
   viewport ahead. Playback uses the original 2 MB model and full texture
-  sources on every device, at native display pixel density. It downloads no
+  sources on every device, at Full HD or native density when sharper. It downloads no
   pre-rendered frame sequence by default.
-- `hardware-quality.js`: bounds extreme drawing-buffer allocations to 8 Mi
-  pixels and the GPU's dimension limit, preserving native pixels on normal
-  desktop and phone viewports. Slow frames never reduce resolution.
+- `hardware-quality.js`: gives the actual Blender picture a 1920 × 1080
+  minimum, measured inside its letterboxed view, while retaining sharper native
+  density. Extreme drawing buffers remain bounded to 8 Mi pixels and the GPU's
+  dimension limit. Slow frames never reduce resolution. When supersampling
+  already smooths the displayed picture, redundant MSAA buffers are avoided.
   Large drawing buffers are released when hidden or offscreen and restored
   before the study returns; the model stays ready without another download.
 - `hero.js` and `film.js`: preserve the real films, with deferred loading,

@@ -278,7 +278,7 @@ function resize() {
   }
   if (USE_SEQ) seqResize(w, h);
   if (!renderer) return;
-  const resolution = hardwareResolution(w, h, devicePixelRatio || 1, maxRenderDimension);
+  const resolution = hardwareResolution(w, h, devicePixelRatio || 1, maxRenderDimension, film.w, film.h);
   const ratio = BAKE ? BAKE.s : resolution.ratio;
   // Repeated resize notifications must not reallocate the same GPU buffers.
   if (w !== renderWidth || h !== renderHeight || ratio !== renderRatio) {
@@ -296,6 +296,7 @@ function resize() {
   uFilm.value.set(film.x * k, (h - film.y - film.h) * k, film.w * k, film.h * k);
   stats.quality = 1;
   stats.pixelRatio = ratio;
+  stats.picturePixels = [Math.floor(film.w * ratio), Math.floor(film.h * ratio)];
   stats.bufferPixels = renderer.domElement.width * renderer.domElement.height;
   dirty = true;
   wake();
@@ -726,7 +727,11 @@ const yUp = ([x, y, z]) => new THREE.Vector3(x, z, -y);
 async function init() {
   if (!window.WebGLRenderingContext) throw new Error('WebGL unavailable');
   try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const native = Math.max(1, devicePixelRatio || 1);
+    const planned = hardwareResolution(view.clientWidth, view.clientHeight, native, maxRenderDimension, film.w, film.h);
+    // When rendering well above native display density, downsampling already
+    // smooths edges. Avoid also allocating multisample color/depth buffers.
+    renderer = new THREE.WebGLRenderer({ antialias: !!BAKE || planned.ratio / native < 1.5, powerPreference: 'high-performance' });
   } catch (e) { throw new Error('WebGL unavailable'); }
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   stats.shadow = shadowSize;
@@ -738,6 +743,7 @@ async function init() {
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.needsUpdate = true;
   const context = renderer.getContext();
+  stats.antialias = context.getContextAttributes().antialias;
   maxRenderDimension = context.getParameter(context.MAX_RENDERBUFFER_SIZE);
   // Inspect the actual renderer, without allocating a second probe context.
   const gpuInfo = context.getExtension('WEBGL_debug_renderer_info');
