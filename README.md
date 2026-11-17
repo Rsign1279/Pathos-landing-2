@@ -1,4 +1,4 @@
-# PATHOS — integrated original + planetary story
+# Pathos IoT — integrated original + planetary story
 
 The founder's complete original landing page, with its 19 sections and
 interactive experiences retained. The new planetary narrative applies only
@@ -52,7 +52,10 @@ commit `6cfb566` so content preservation is directly auditable.
   row's emergence. Text remains normal HTML with its original UI behavior.
 - `orbit-motion.js`: reversible angular phases, surface origins and curved
   poses shared by the renderer, typography and repeatable motion checks.
-- `planet.js`: the lightweight analytic sphere and existing marble texture.
+- `planet.js`: the lightweight analytic sphere, existing marble texture and
+  material-anchored logo engraving with recessed, light-catching bevels.
+- `brand.css` and `assets/brand/`: the supplied Pathos IoT identity, rebuilt
+  as crisp vectors for navigation, footer, icons and social previews.
 - `prototype-loader.js`: loads the original in-page hardware study only near
   its section. The study retains its bounded 16-frame cache.
 - `hero.js` and `film.js`: preserve the real films, with deferred loading,
@@ -69,12 +72,24 @@ full-width page. Pause and reduced-motion preference expose every word
 immediately. Keyboard focus settles interactive content. No nested scroll
 container or forced snapping is used. Fonts are served locally.
 
+The engraving adds a 7.5 KB optional packed relief map. It loads independently
+of the sphere, follows its scroll-driven rotation and triggers one redraw.
+Missing WebGL retains an etched-logo CSS fallback. Branding changes preserve
+original media, technical model identifiers and the archived content baseline.
+
+To rebuild the brand assets, install `@resvg/resvg-js` outside this site in
+`../brand-tools`, then run `node deliverables/build-brand.cjs`. This development
+dependency is not shipped to visitors. Rebuild the integrated page with
+`node deliverables/build-integrated.cjs` and auxiliary page branding with
+`node deliverables/apply-brand.cjs`.
+
 ## Rebuild and verify
 
 ```sh
 node deliverables/build-integrated.cjs
 node deliverables/verify-integrated.cjs
 node deliverables/verify-orbit-motion.cjs
+node deliverables/verify-brand.cjs
 ```
 
 The audit compares every original section's text and content collections,
@@ -95,5 +110,5 @@ edition; use the integrated audit on this branch.
 
 The working MVP 1 uses the ESP32 and BME280 environmental pipeline. Body
 sensors, a wearable format, and caregiver alerts are MVP 2 development work.
-WESAD research is not validated accuracy on PATHOS hardware. The site measures
-no visitor physiological signals. PATHOS is not a medical device.
+WESAD research is not validated accuracy on Pathos IoT hardware. The site
+measures no visitor physiological signals. Pathos IoT is not a medical device.

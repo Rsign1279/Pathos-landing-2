@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#10100e">
-<meta name="description" content="Explore the PATHOS hardware concept, from sensors to the dashboard. An interactive engineering study; body sensors are in development.">
-<title>Inside the build — PATHOS</title>
+<meta name="description" content="Explore the Pathos IoT hardware concept, from sensors to the dashboard. An interactive engineering study; body sensors are in development.">
+<title>Inside the build — Pathos IoT</title>
 <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="assets/brand/pathos-iot-icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="prototype.css">
 <link rel="preload" href="assets/fonts/eb-garamond-latin-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/figtree-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
@@ -21,12 +22,13 @@ html.hw-reduced{scroll-behavior:auto}html.hw-reduced .hw-track{height:auto}html.
 .study-skip{position:fixed;top:12px;left:12px;z-index:100;transform:translateY(-160%);background:#e6d4ec;color:#10100e;padding:12px 24px;text-decoration:none}.study-skip:focus{transform:none}
 </style>
 <script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js","three/addons/":"./assets/vendor/three/addons/"}}</script>
+  <link rel="stylesheet" href="brand.css">
 </head>
 <body>
 <a class="study-skip" href="#main">Skip to content</a>
-<nav class="study-nav" aria-label="Hardware study"><a class="study-brand" href="./" aria-label="PATHOS home">PATHOS</a><a class="study-back" href="./#product">← Back to the real build</a></nav>
+<nav class="study-nav" aria-label="Hardware study"><a class="study-brand pathos-iot-brand" href="./" aria-label="Pathos IoT home"><img class="brand-logo" src="assets/brand/pathos-iot-logo.svg" alt="" aria-hidden="true" width="224" height="56"></a><a class="study-back" href="./#product">← Back to the real build</a></nav>
 <main id="main">
-    <section id="prototype" class="prototype" aria-label="PATHOS hardware, in 3D">
+    <section id="prototype" class="prototype" aria-label="Pathos IoT hardware, in 3D">
         <div class="wrap">
             <header class="sec-head sys-head prototype-head" data-reveal>
                 <p class="eyebrow">04 &middot; Hardware in 3D</p>
@@ -43,7 +45,7 @@ html.hw-reduced{scroll-behavior:auto}html.hw-reduced .hw-track{height:auto}html.
                     <a class="hw-skip" href="./#product">Back to the build &darr;</a>
                 </div>
                 <div class="hw-view" id="hwView">
-                    <img class="hw-poster" id="hwPoster" src="assets/pathos-hardware-poster.webp" alt="The PATHOS prototype on a matte black table: the breadboard rig with its power bank and finger electrodes beside a midnight MacBook showing the PATHOS Stress-Lysis Monitor." width="1600" height="900" decoding="async">
+                    <img class="hw-poster" id="hwPoster" src="assets/pathos-hardware-poster.webp" alt="The Pathos IoT prototype on a matte black table: the breadboard rig with its power bank and finger electrodes beside a midnight MacBook showing the Pathos IoT Stress-Lysis Monitor." width="1600" height="900" decoding="async">
                     <p class="hw-status" id="hwStatus" role="status">Loading the 3D model…</p>
                     <span class="hw-tip" id="hwTip" hidden></span>
                     <div class="hw-label" id="hwLabel" role="status" hidden>
@@ -58,46 +60,46 @@ html.hw-reduced{scroll-behavior:auto}html.hw-reduced .hw-track{height:auto}html.
                     </div>
                     <div class="hw-hud" id="hwHud" aria-live="off">
                         <article class="hw-chapter" data-shot-start="1" data-shot-end="298" data-start="1" data-end="286" data-rail="Overview">
-                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;01</p>
-                            <h3 class="hw-title hw-title--intro">PATHOS</h3>
+                            <p class="hw-eyebrow">Pathos IoT&nbsp;&nbsp;/&nbsp;&nbsp;01</p>
+                            <h3 class="hw-title hw-title--intro">Pathos IoT</h3>
                             <div class="hw-plate hw-plate--short"><p class="hw-caption">PHYSIOLOGICAL AWARENESS, ENGINEERED.</p></div>
                         </article>
                         <article class="hw-chapter" data-shot-start="298" data-shot-end="688" data-start="298" data-end="676" data-rail="Exploded view">
-                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;02</p>
+                            <p class="hw-eyebrow">Pathos IoT&nbsp;&nbsp;/&nbsp;&nbsp;02</p>
                             <div class="hw-plate"><p class="hw-caption">ONE BREADBOARD. EIGHT CONNECTED MODULES.</p></div>
                         </article>
                         <article class="hw-chapter" data-shot-start="688" data-shot-end="898" data-start="688" data-end="886" data-rail="The brain">
-                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;03</p>
+                            <p class="hw-eyebrow">Pathos IoT&nbsp;&nbsp;/&nbsp;&nbsp;03</p>
                             <h3 class="hw-title">The brain</h3>
                             <div class="hw-plate"><p class="hw-caption">ESP32-S3 / ACQUISITION, CONTROL AND WI-FI</p></div>
                         </article>
                         <article class="hw-chapter" data-shot-start="898" data-shot-end="1198" data-start="898" data-end="1194" data-rail="Sensor highway">
-                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;04</p>
+                            <p class="hw-eyebrow">Pathos IoT&nbsp;&nbsp;/&nbsp;&nbsp;04</p>
                             <div class="hw-plate"><p class="hw-caption">TMP117 / ADS1115 / MPU6050 / MAX30102 / BME280</p></div>
                         </article>
                         <article class="hw-chapter" data-shot-start="1198" data-shot-end="1498" data-start="1198" data-end="1486" data-rail="GSR data path">
-                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;05</p>
+                            <p class="hw-eyebrow">Pathos IoT&nbsp;&nbsp;/&nbsp;&nbsp;05</p>
                             <div class="hw-plate"><p class="hw-caption">ELECTRODES&nbsp;&nbsp;&gt;&nbsp;&nbsp;GSR&nbsp;&nbsp;&gt;&nbsp;&nbsp;ADS1115 A0&nbsp;&nbsp;&gt;&nbsp;&nbsp;I2C&nbsp;&nbsp;&gt;&nbsp;&nbsp;ESP32-S3</p></div>
                         </article>
                         <article class="hw-chapter" data-shot-start="1498" data-shot-end="1678" data-start="1498" data-end="1666" data-rail="Storage">
-                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;06</p>
+                            <p class="hw-eyebrow">Pathos IoT&nbsp;&nbsp;/&nbsp;&nbsp;06</p>
                             <div class="hw-plate"><p class="hw-caption">ESP32-S3&nbsp;&nbsp;&gt;&nbsp;&nbsp;DEDICATED SPI&nbsp;&nbsp;&gt;&nbsp;&nbsp;microSD</p></div>
                         </article>
                         <article class="hw-chapter" data-shot-start="1678" data-shot-end="1948" data-start="1678" data-end="1936" data-rail="Wi-Fi">
-                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;07</p>
+                            <p class="hw-eyebrow">Pathos IoT&nbsp;&nbsp;/&nbsp;&nbsp;07</p>
                             <h3 class="hw-title">Connected, wirelessly</h3>
                             <div class="hw-plate"><p class="hw-caption">ESP32-S3&nbsp;&nbsp;&gt;&nbsp;&nbsp;WI-FI&nbsp;&nbsp;&gt;&nbsp;&nbsp;LAPTOP</p></div>
                         </article>
                         <article class="hw-chapter" data-shot-start="1948" data-shot-end="2248" data-start="0" data-end="0" data-rail="Laptop">
-                            <p class="hw-sr">The laptop shows the PATHOS v1 software: Live Instrument, Model Study, Source Data and Diagnostics.</p>
+                            <p class="hw-sr">The laptop shows the Pathos IoT v1 software: Live Instrument, Model Study, Source Data and Diagnostics.</p>
                         </article>
                         <article class="hw-chapter" data-shot-start="2248" data-shot-end="2518" data-start="2248" data-end="2506" data-rail="Full pipeline">
-                            <p class="hw-eyebrow">PATHOS&nbsp;&nbsp;/&nbsp;&nbsp;09</p>
+                            <p class="hw-eyebrow">Pathos IoT&nbsp;&nbsp;/&nbsp;&nbsp;09</p>
                             <h3 class="hw-title">The complete pipeline</h3>
                             <div class="hw-plate"><p class="hw-caption">SENSORS &gt; ESP32-S3 &gt; WI-FI &gt; PROCESSING &gt; V4 &gt; DASHBOARD</p></div>
                         </article>
                         <article class="hw-chapter hw-chapter--final" data-shot-start="2518" data-shot-end="2881" data-start="2598" data-end="2881" data-rail="Reassembly">
-                            <h3 class="hw-title hw-title--final">PATHOS</h3>
+                            <h3 class="hw-title hw-title--final">Pathos IoT</h3>
                             <div class="hw-plate hw-plate--final"><p class="hw-line hw-line--ink">Stress You Can&rsquo;t See,</p><p class="hw-line hw-line--gold">Awareness You Can.</p></div>
                             <a class="hw-cta" href="./#product">See the real build &darr;</a>
                         </article>
@@ -111,7 +113,7 @@ html.hw-reduced{scroll-behavior:auto}html.hw-reduced .hw-track{height:auto}html.
 
 
 <p class="study-status"><strong>Engineering concept · body sensors in development.</strong> This study shows the intended system. The laptop displays the original v1 software, not live physiological readings.</p>
-<noscript><div class="study-fallback"><p>The still above shows the PATHOS concept. The working prototype uses an ESP32 and BME280 room sensor; physiological sensors are part of MVP 2.</p><p>Enable JavaScript for the interactive hardware study, or <a href="./#product">see the real prototype photographs</a>.</p></div></noscript>
+<noscript><div class="study-fallback"><p>The still above shows the Pathos IoT concept. The working prototype uses an ESP32 and BME280 room sensor; physiological sensors are part of MVP 2.</p><p>Enable JavaScript for the interactive hardware study, or <a href="./#product">see the real prototype photographs</a>.</p></div></noscript>
 </main>
 <footer class="study-foot"><p>A wellness awareness research prototype. Not a medical device.</p><a href="./#product">Return to the build ↗</a></footer>
 <script type="module" src="hardware-launch.js"></script>

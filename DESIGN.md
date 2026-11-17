@@ -1,4 +1,18 @@
-# PATHOS design record
+# Pathos IoT design record
+
+## Supplied identity and engraved stone · November 16, 2026
+
+The supplied pulse-P emblem, crossbar-free A, spaced wordmark and IoT subline
+are reconstructed as native vector paths. Header and auxiliary navigation use
+the horizontal lockup; the footer retains the stacked composition. Icons and
+social previews share the same emblem and sampled gold.
+
+The planet carries an inward cut in its marble material. A small packed normal
+and cavity map preserves stone grain inside the letters, shades the recesses
+and lights their bevels. Material coordinates keep the engraving attached as
+scroll rotates the sphere. The map is optional and wakes the shared renderer
+once when ready. Content, reading holds, release timing and original media
+remain intact. Current interface text and accessible names use Pathos IoT.
 
 ## Scroll-driven surface narrative · November 16, 2026
 

@@ -774,7 +774,7 @@ function initContactForm() {
     const payload = {
       name: data.name.trim(), email: data.email.trim(), organization: (data.organization || '').trim() || 'Not given',
       interest: data.interest, message: data.message.trim(),
-      _subject: `PATHOS: ${data.interest} from ${data.name.trim()}`, _replyto: data.email.trim(), _template: 'table',
+      _subject: `Pathos IoT: ${data.interest} from ${data.name.trim()}`, _replyto: data.email.trim(), _template: 'table',
     };
     button.disabled = true; button.textContent = 'Sending…';
     status.hidden = true;

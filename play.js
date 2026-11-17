@@ -161,12 +161,12 @@ const statement = meter && meter.nextElementSibling;
 const selected = new Set();
 
 const READINGS = {
-  none: [0, 'Tap the signals you’d see together.', 'See how PATHOS reads the combination.'],
+  none: [0, 'Tap the signals you’d see together.', 'See how Pathos IoT reads the combination.'],
   motion: [0.1, 'Just moving.', 'Walking to class looks like this. On its own it isn’t a stress sign.'],
-  motionMixed: [0.16, 'Moving explains most of this.', 'PATHOS waits until you’re still before it reads the body.'],
+  motionMixed: [0.16, 'Moving explains most of this.', 'Pathos IoT waits until you’re still before it reads the body.'],
   one: [0.26, 'One signal on its own.', 'Could be coffee, a warm room or the stairs.'],
   two: [0.6, 'Two signals agree.', 'Worth watching, but not enough to call it.'],
-  three: [1, 'All three, while sitting still.', 'That’s the pattern PATHOS flags as a much stronger sign.'],
+  three: [1, 'All three, while sitting still.', 'That’s the pattern Pathos IoT flags as a much stronger sign.'],
 };
 function readMeter() {
   if (!meter) return;

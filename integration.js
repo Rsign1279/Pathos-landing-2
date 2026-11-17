@@ -202,6 +202,7 @@ const sizes=new ResizeObserver(scheduleMeasure);groups.forEach(group=>sizes.obse
 if(document.getElementById('main'))sizes.observe(document.getElementById('main'));
 const visibility=new IntersectionObserver(()=>{dirty=true;wake();},{threshold:0});groups.forEach(group=>visibility.observe(group.element));
 canvas.addEventListener('planetrestore',()=>{renderer?.destroy();renderer=null;initializing=null;if(active)mount(active);});
+canvas.addEventListener('planetchange',()=>{dirty=true;wake();});
 document.fonts.ready.then(scheduleMeasure);addEventListener('load',scheduleMeasure,{once:true});
 document.addEventListener('load',event=>{if(event.target.tagName==='IMG')scheduleMeasure();},true);
 measure();updateMotion();

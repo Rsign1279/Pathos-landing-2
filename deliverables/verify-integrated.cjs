@@ -32,8 +32,11 @@ check(JSON.stringify(sectionIds(currentSections))===JSON.stringify(expectedIds),
 const byId=sections=>Object.fromEntries(sections.map(section=>[attr(section.open,'id'),section]));
 const before=byId(originalSections),after=byId(currentSections);
 function stripEdge(html){return html.replace(/\s*<canvas\b(?=[^>]*\bclass=["'][^"']*\bedge-art\b)[^>]*>\s*<\/canvas>/g,'');}
+// The owner requested a presentation-only rename. Normalize that explicit
+// exception on both sides while still comparing every other byte of content.
+const normalizeBrand=html=>html.replace(/\bPathos%20IoT\b/g,'PATHOS').replace(/\bPathos IoT\b/g,'PATHOS');
 function normalizeMarkup(html,id){
-  html=stripEdge(html);
+  html=normalizeBrand(stripEdge(html));
   if(id==='hero')html=html.replace(/<span class="hero-research-status">[^]*?<\/span>/,'').replace('PATHOS explores skin conductance','PATHOS reads skin conductance');
   // Loading and progressive-enhancement attributes may change, never content.
   html=html.replace(/<video\b[^>]*>/g,tag=>tag.replace(/\s+(?:autoplay|controls)\b/g,'').replace(/\s+preload=["'][^"']*["']/g,''));
@@ -41,6 +44,7 @@ function normalizeMarkup(html,id){
   return html.replace(/>\s+</g,'><').replace(/\s+/g,' ').trim();
 }
 function textContent(html,id){
+  html=normalizeBrand(html);
   if(id==='hero')html=html.replace(/<span class="hero-research-status">[^]*?<\/span>/,'').replace('PATHOS explores skin conductance','PATHOS reads skin conductance');
   return html.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
 }
@@ -94,6 +98,7 @@ check(!/\bexperience\.(?:js|css)\b/.test(current),'Replacement-page experience m
 const css=read('integrated.css');
 check(!/fonts\.(?:googleapis|gstatic)\.com/.test(current+css),'Integrated page must serve fonts locally');
 check(css.includes(read('integration.css')),'The served CSS bundle must include the current integration stylesheet');
+check(css.includes(read('brand.css')),'The served CSS bundle must include the current brand stylesheet');
 const changedScripts=['main.js','story.js','play.js','integration.js','orbit-motion.js','prototype-loader.js','planet.js','prototype.js','hero.js','film.js','deliverables/build-integrated.cjs'];
 for(const script of changedScripts){const result=spawnSync(process.execPath,['--check',path.join(root,script)],{encoding:'utf8'});check(result.status===0,`${script}: JavaScript syntax error ${result.stderr}`);}
 

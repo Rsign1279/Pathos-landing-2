@@ -236,8 +236,8 @@ const LABELS = {
   Power_3V3: ['3.3 V power', 'Feeds every module from the ESP32\u2019s regulator.'],
   Ground: ['Ground', 'The common return for every module.'],
   USB_Cable: ['USB power cable', '5 V from the power bank to the board.'],
-  Laptop: ['MacBook · PATHOS dashboard', 'Receives the stream over Wi-Fi and runs the v1 software: live view, model study, source data and diagnostics.'],
-  PATHOS_ROOT__static: ['The PATHOS rig', 'Breadboard, power bank and finger electrodes. The parts budget is under $25.'],
+  Laptop: ['MacBook · Pathos IoT dashboard', 'Receives the stream over Wi-Fi and runs the v1 software: live view, model study, source data and diagnostics.'],
+  PATHOS_ROOT__static: ['The Pathos IoT rig', 'Breadboard, power bank and finger electrodes. The parts budget is under $25.'],
 };
 
 function glowTexture() {

@@ -16,7 +16,7 @@ if (stage && video) {
   video.playsInline = true;
   video.controls = true;
   video.preload = 'none';
-  video.setAttribute('aria-label', 'PATHOS in 44 seconds');
+  video.setAttribute('aria-label', 'Pathos IoT in 44 seconds');
 
   const eligible = () => prepared && onScreen && !document.hidden && !reduced.matches && !userPaused && !blocked;
   const clearRetry = () => { clearTimeout(retryTimer); retryTimer = 0; };
